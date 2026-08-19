@@ -28,8 +28,8 @@ export const Route = createFileRoute("/_authenticated/inventory")({
 function InventoryPage() {
   const qc = useQueryClient();
   const { data: products } = useProducts();
-  const [p, setP] = useState({ name: "", unit: SALE_UNITS[0], cost_price: 0, sale_price: 0, stock_qty: 0 });
-  const [w, setW] = useState({ item_name: "", quantity: 0, unit: SALE_UNITS[0], unit_cost: 0, reason: "" });
+  const [p, setP] = useState({ name: "", unit: SALE_UNITS[0]!, cost_price: 0, sale_price: 0, stock_qty: 0 });
+  const [w, setW] = useState({ item_name: "", quantity: 0, unit: SALE_UNITS[0]!, unit_cost: 0, reason: "" });
 
   const { data: waste } = useQuery({
     queryKey: ["waste"],
@@ -45,7 +45,7 @@ function InventoryPage() {
   });
 
   const addProduct = async () => {
-    if (!p.name.trim()) return toast.error("أدخل اسم الصنف");
+    if (!p.name.trim()) { toast.error("أدخل اسم الصنف"); return; }
     const { error } = await supabase.from("products").insert({
       name: p.name.trim(),
       unit: p.unit,
@@ -53,14 +53,14 @@ function InventoryPage() {
       sale_price: num(p.sale_price),
       stock_qty: num(p.stock_qty),
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("تمت إضافة الصنف");
-    setP({ name: "", unit: SALE_UNITS[0], cost_price: 0, sale_price: 0, stock_qty: 0 });
+    setP({ name: "", unit: SALE_UNITS[0]!, cost_price: 0, sale_price: 0, stock_qty: 0 });
     qc.invalidateQueries({ queryKey: ["products"] });
   };
 
   const addWaste = async () => {
-    if (!w.item_name.trim()) return toast.error("أدخل اسم الصنف");
+    if (!w.item_name.trim()) { toast.error("أدخل اسم الصنف"); return; }
     const { data: user } = await supabase.auth.getUser();
     const { error } = await supabase.from("waste").insert({
       item_name: w.item_name.trim(),
@@ -71,9 +71,9 @@ function InventoryPage() {
       reason: w.reason || null,
       created_by: user.user?.id ?? null,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("تم تسجيل الهالك");
-    setW({ item_name: "", quantity: 0, unit: SALE_UNITS[0], unit_cost: 0, reason: "" });
+    setW({ item_name: "", quantity: 0, unit: SALE_UNITS[0]!, unit_cost: 0, reason: "" });
     qc.invalidateQueries({ queryKey: ["waste"] });
     qc.invalidateQueries({ queryKey: ["dashboard"] });
   };

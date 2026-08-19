@@ -51,8 +51,8 @@ function LedgerPage() {
   const pay = async (invoice: any) => {
     const amount = num(amounts[invoice.id]);
     const remaining = Number(invoice.total) - Number(invoice.paid);
-    if (amount <= 0) return toast.error("أدخل مبلغ الدفعة");
-    if (amount > remaining + 0.001) return toast.error("المبلغ أكبر من المتبقي");
+    if (amount <= 0) { toast.error("أدخل مبلغ الدفعة"); return; }
+    if (amount > remaining + 0.001) { toast.error("المبلغ أكبر من المتبقي"); return; }
     const { data: user } = await supabase.auth.getUser();
     const { error } = await supabase.from("payments").insert({
       ref_type: "invoice",
@@ -60,12 +60,12 @@ function LedgerPage() {
       amount,
       created_by: user.user?.id ?? null,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     const { error: upErr } = await supabase
       .from("invoices")
       .update({ paid: Number(invoice.paid) + amount })
       .eq("id", invoice.id);
-    if (upErr) return toast.error(upErr.message);
+    if (upErr) { toast.error(upErr.message); return; }
     toast.success("تم تسجيل الدفعة");
     setAmounts((a) => ({ ...a, [invoice.id]: 0 }));
     qc.invalidateQueries({ queryKey: ["debts"] });

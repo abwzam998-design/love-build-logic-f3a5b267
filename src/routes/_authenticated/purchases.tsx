@@ -27,14 +27,14 @@ export const Route = createFileRoute("/_authenticated/purchases")({
 });
 
 type Line = { item_name: string; quantity: number; unit: string; unit_cost: number; product_id: string | null };
-const emptyLine: Line = { item_name: "", quantity: 1, unit: SALE_UNITS[0], unit_cost: 0, product_id: null };
+const emptyLine: Line = { item_name: "", quantity: 1, unit: SALE_UNITS[0]!, unit_cost: 0, product_id: null };
 
 function PurchasesPage() {
   const qc = useQueryClient();
   const { data: products } = useProducts();
   const [supplierName, setSupplierName] = useState("");
   const [supplierPhone, setSupplierPhone] = useState("");
-  const [paymentType, setPaymentType] = useState(PAYMENT_TYPES[0]);
+  const [paymentType, setPaymentType] = useState(PAYMENT_TYPES[0]!);
   const [paid, setPaid] = useState(0);
   const [lines, setLines] = useState<Line[]>([{ ...emptyLine }]);
 
@@ -57,9 +57,9 @@ function PurchasesPage() {
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
 
   const save = async () => {
-    if (!supplierName.trim()) return toast.error("أدخل اسم المورد");
+    if (!supplierName.trim()) { toast.error("أدخل اسم المورد"); return; }
     const valid = lines.filter((l) => l.item_name.trim() && num(l.quantity) > 0);
-    if (!valid.length) return toast.error("أضف صنفاً واحداً على الأقل");
+    if (!valid.length) { toast.error("أضف صنفاً واحداً على الأقل"); return; }
     const { data: user } = await supabase.auth.getUser();
     const { data: pur, error } = await supabase
       .from("purchases")
@@ -74,7 +74,7 @@ function PurchasesPage() {
       })
       .select()
       .single();
-    if (error || !pur) return toast.error(error?.message ?? "تعذر الحفظ");
+    if (error || !pur) { toast.error(error?.message ?? "تعذر الحفظ"); return; }
     const { error: itemsError } = await supabase.from("purchase_items").insert(
       valid.map((l) => ({
         purchase_id: pur.id,
@@ -86,7 +86,7 @@ function PurchasesPage() {
         line_total: num(l.quantity) * num(l.unit_cost),
       })),
     );
-    if (itemsError) return toast.error(itemsError.message);
+    if (itemsError) { toast.error(itemsError.message); return; }
     toast.success("تم حفظ فاتورة الشراء");
     setSupplierName("");
     setSupplierPhone("");

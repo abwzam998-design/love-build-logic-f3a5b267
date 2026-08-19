@@ -50,7 +50,7 @@ function PersonalPage() {
   });
 
   const saveAdvance = async () => {
-    if (!adv.person_name.trim() || num(adv.amount) <= 0) return toast.error("أدخل الاسم والمبلغ");
+    if (!adv.person_name.trim() || num(adv.amount) <= 0) { toast.error("أدخل الاسم والمبلغ"); return; }
     const { data: user } = await supabase.auth.getUser();
     const { error } = await supabase.from("advances").insert({
       person_name: adv.person_name.trim(),
@@ -59,14 +59,14 @@ function PersonalPage() {
       notes: adv.notes || null,
       created_by: user.user?.id ?? null,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("تم تسجيل السلفة");
     setAdv({ ...adv, person_name: "", amount: 0, notes: "" });
     qc.invalidateQueries({ queryKey: ["advances"] });
   };
 
   const saveWithdrawal = async () => {
-    if (num(wd.amount) <= 0) return toast.error("أدخل المبلغ");
+    if (num(wd.amount) <= 0) { toast.error("أدخل المبلغ"); return; }
     const { data: user } = await supabase.auth.getUser();
     const { error } = await supabase.from("owner_withdrawals").insert({
       amount: num(wd.amount),
@@ -74,7 +74,7 @@ function PersonalPage() {
       reason: wd.reason || null,
       created_by: user.user?.id ?? null,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("تم تسجيل المسحوب");
     setWd({ ...wd, amount: 0, reason: "" });
     qc.invalidateQueries({ queryKey: ["withdrawals"] });

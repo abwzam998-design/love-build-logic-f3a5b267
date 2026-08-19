@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/expenses")({
 function ExpensesPage() {
   const qc = useQueryClient();
   const [form, setForm] = useState({
-    category: EXPENSE_CATEGORIES[0],
+    category: EXPENSE_CATEGORIES[0]!,
     amount: 0,
     description: "",
     expense_date: todayISO(),
@@ -50,7 +50,7 @@ function ExpensesPage() {
   const total = (rows ?? []).reduce((a, r) => a + Number(r.amount), 0);
 
   const save = async () => {
-    if (num(form.amount) <= 0) return toast.error("أدخل المبلغ");
+    if (num(form.amount) <= 0) { toast.error("أدخل المبلغ"); return; }
     const { data: user } = await supabase.auth.getUser();
     const { error } = await supabase.from("expenses").insert({
       category: form.category,
@@ -60,7 +60,7 @@ function ExpensesPage() {
       is_recurring: form.is_recurring,
       created_by: user.user?.id ?? null,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("تم حفظ المصروف");
     setForm({ ...form, amount: 0, description: "" });
     qc.invalidateQueries({ queryKey: ["expenses"] });

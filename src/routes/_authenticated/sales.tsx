@@ -38,9 +38,9 @@ type Line = {
 const emptyLine: Line = {
   item_name: "",
   quantity: 1,
-  unit: SALE_UNITS[0],
+  unit: SALE_UNITS[0]!,
   unit_price: 0,
-  sale_kind: SALE_KINDS[0],
+  sale_kind: SALE_KINDS[0]!,
   product_id: null,
 };
 
@@ -49,7 +49,7 @@ function SalesPage() {
   const { data: products } = useProducts();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [paymentType, setPaymentType] = useState(PAYMENT_TYPES[0]);
+  const [paymentType, setPaymentType] = useState(PAYMENT_TYPES[0]!);
   const [paid, setPaid] = useState(0);
   const [lines, setLines] = useState<Line[]>([{ ...emptyLine }]);
   const [saving, setSaving] = useState(false);
@@ -73,9 +73,9 @@ function SalesPage() {
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
 
   const save = async () => {
-    if (!customerName.trim()) return toast.error("أدخل اسم العميل");
+    if (!customerName.trim()) { toast.error("أدخل اسم العميل"); return; }
     const valid = lines.filter((l) => l.item_name.trim() && num(l.quantity) > 0);
-    if (!valid.length) return toast.error("أضف صنفاً واحداً على الأقل");
+    if (!valid.length) { toast.error("أضف صنفاً واحداً على الأقل"); return; }
     setSaving(true);
     const paidAmount = paymentType === "نقدي" ? total : num(paid);
     const { data: user } = await supabase.auth.getUser();
@@ -86,7 +86,7 @@ function SalesPage() {
         customer_name: customerName.trim(),
         customer_phone: customerPhone.trim() || null,
         payment_type: paymentType,
-        sale_type: valid[0].sale_kind,
+        sale_type: valid[0]!.sale_kind,
         total,
         paid: paidAmount,
         created_by: user.user?.id ?? null,
@@ -95,7 +95,7 @@ function SalesPage() {
       .single();
     if (error || !inv) {
       setSaving(false);
-      return toast.error(error?.message ?? "تعذر الحفظ");
+      { toast.error(error?.message ?? "تعذر الحفظ"); return; }
     }
     const { error: itemsError } = await supabase.from("invoice_items").insert(
       valid.map((l) => ({
@@ -110,7 +110,7 @@ function SalesPage() {
       })),
     );
     setSaving(false);
-    if (itemsError) return toast.error(itemsError.message);
+    if (itemsError) { toast.error(itemsError.message); return; }
     toast.success("تم حفظ الفاتورة");
     setCustomerName("");
     setCustomerPhone("");

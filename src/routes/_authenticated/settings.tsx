@@ -52,9 +52,9 @@ function SettingsPage() {
   }, [data]);
 
   const save = async () => {
-    if (!data?.id) return toast.error("لا توجد إعدادات للتعديل");
+    if (!data?.id) { toast.error("لا توجد إعدادات للتعديل"); return; }
     const { error } = await supabase.from("settings").update(form).eq("id", data.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("تم حفظ الإعدادات");
     qc.invalidateQueries({ queryKey: ["settings"] });
   };
