@@ -38,7 +38,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" as string });
+      if (data.session) navigate({ to: "/dashboard" });
     });
   }, [navigate]);
 
@@ -48,7 +48,7 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
-    navigate({ to: "/dashboard" as string });
+    navigate({ to: "/dashboard" });
   };
 
   const signUp = async (e: React.FormEvent) => {
@@ -65,7 +65,7 @@ function AuthPage() {
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     toast.success("تم إنشاء الحساب، يمكنك الدخول الآن");
-    navigate({ to: "/dashboard" as string });
+    navigate({ to: "/dashboard" });
   };
 
   const google = async () => {
