@@ -36,6 +36,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [accountType, setAccountType] = useState<"manager" | "seller">("seller");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -61,7 +62,7 @@ function AuthPage() {
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { full_name: fullName },
+        data: { full_name: fullName, role: accountType },
       },
     });
     setLoading(false);
@@ -84,14 +85,20 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-secondary px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-lg">
         <div className="mb-6 text-center">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Store className="size-6" />
-          </div>
-          <h1 className="mt-3 text-xl font-bold">نظام إدارة المبيعات والمخزون</h1>
+          <img
+            src={logo}
+            alt="شعار معاذ سوفت"
+            width={816}
+            height={816}
+            className="mx-auto size-16 object-contain"
+          />
+          <p className="mt-2 text-sm font-bold tracking-wide text-primary">معاذ سوفت</p>
+          <h1 className="mt-1 text-xl font-bold">نظام إدارة المبيعات والمخزون</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             فواتير، ديون، مصروفات، وأرباح صافية في مكان واحد
           </p>
         </div>
+
 
         <Tabs defaultValue="login">
           <TabsList className="grid w-full grid-cols-2">
