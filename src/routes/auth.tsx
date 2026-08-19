@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Store } from "lucide-react";
+import logo from "@/assets/moath-soft-logo.png";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -36,6 +36,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [accountType, setAccountType] = useState<"manager" | "seller">("seller");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -61,7 +62,7 @@ function AuthPage() {
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { full_name: fullName },
+        data: { full_name: fullName, role: accountType },
       },
     });
     setLoading(false);
@@ -84,14 +85,20 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-secondary px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-lg">
         <div className="mb-6 text-center">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Store className="size-6" />
-          </div>
-          <h1 className="mt-3 text-xl font-bold">نظام إدارة المبيعات والمخزون</h1>
+          <img
+            src={logo}
+            alt="شعار معاذ سوفت"
+            width={816}
+            height={816}
+            className="mx-auto size-16 object-contain"
+          />
+          <p className="mt-2 text-sm font-bold tracking-wide text-primary">معاذ سوفت</p>
+          <h1 className="mt-1 text-xl font-bold">نظام إدارة المبيعات والمخزون</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             فواتير، ديون، مصروفات، وأرباح صافية في مكان واحد
           </p>
         </div>
+
 
         <Tabs defaultValue="login">
           <TabsList className="grid w-full grid-cols-2">
@@ -129,12 +136,37 @@ function AuthPage() {
                 <Label htmlFor="password2">كلمة المرور</Label>
                 <Input id="password2" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
+              <div className="space-y-1.5">
+                <Label>نوع الحساب</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { v: "manager", t: "مدير", d: "كل الصلاحيات" },
+                    { v: "seller", t: "كاشير", d: "المبيعات فقط" },
+                  ] as const).map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onClick={() => setAccountType(o.v)}
+                      className={
+                        "rounded-lg border p-2.5 text-right transition-colors " +
+                        (accountType === o.v
+                          ? "border-primary bg-primary/10"
+                          : "hover:bg-accent")
+                      }
+                    >
+                      <span className="block text-sm font-semibold">{o.t}</span>
+                      <span className="block text-xs text-muted-foreground">{o.d}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 إنشاء الحساب
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                أول حساب في النظام يحصل على صلاحية المدير تلقائياً
+                حساب المدير يصل للأرباح والأسعار والمصروفات، والكاشير للمبيعات فقط
               </p>
+
             </form>
           </TabsContent>
         </Tabs>
