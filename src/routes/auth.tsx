@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Store } from "lucide-react";
+import logo from "@/assets/moath-soft-logo.png";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -136,12 +136,37 @@ function AuthPage() {
                 <Label htmlFor="password2">كلمة المرور</Label>
                 <Input id="password2" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
+              <div className="space-y-1.5">
+                <Label>نوع الحساب</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { v: "manager", t: "مدير", d: "كل الصلاحيات" },
+                    { v: "seller", t: "كاشير", d: "المبيعات فقط" },
+                  ] as const).map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onClick={() => setAccountType(o.v)}
+                      className={
+                        "rounded-lg border p-2.5 text-right transition-colors " +
+                        (accountType === o.v
+                          ? "border-primary bg-primary/10"
+                          : "hover:bg-accent")
+                      }
+                    >
+                      <span className="block text-sm font-semibold">{o.t}</span>
+                      <span className="block text-xs text-muted-foreground">{o.d}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 إنشاء الحساب
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                أول حساب في النظام يحصل على صلاحية المدير تلقائياً
+                حساب المدير يصل للأرباح والأسعار والمصروفات، والكاشير للمبيعات فقط
               </p>
+
             </form>
           </TabsContent>
         </Tabs>
