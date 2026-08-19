@@ -14,6 +14,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import logo from "@/assets/moath-soft-logo.png";
+
 import { useRole, useSettings } from "@/hooks/useAppData";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -74,14 +76,27 @@ export function AppShell({
 
   const Brand = (
     <div className="border-b border-sidebar-border px-4 py-4">
-      <p className="text-base font-bold text-sidebar-foreground">
-        {settings?.business_name ?? "نظام الإدارة"}
-      </p>
-      <p className="mt-0.5 truncate text-xs text-sidebar-foreground/60">
-        {user?.email} · {isManager ? "مدير" : "بائع"}
+      <div className="flex items-center gap-2">
+        <img
+          src={logo}
+          alt="شعار معاذ سوفت"
+          width={816}
+          height={816}
+          className="size-9 shrink-0 object-contain"
+        />
+        <div className="min-w-0">
+          <p className="text-base font-bold text-sidebar-foreground">
+            {settings?.business_name ?? "نظام الإدارة"}
+          </p>
+          <p className="text-[11px] font-medium text-primary">معاذ سوفت</p>
+        </div>
+      </div>
+      <p className="mt-1.5 truncate text-xs text-sidebar-foreground/60">
+        {user?.email} · {isManager ? "مدير" : "كاشير"}
       </p>
     </div>
   );
+
 
   return (
     <div className="flex min-h-screen bg-background">
