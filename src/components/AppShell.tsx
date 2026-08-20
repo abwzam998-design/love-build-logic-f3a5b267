@@ -16,7 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/moath-soft-logo.png";
 
-import { useRole, useSettings } from "@/hooks/useAppData";
+import { useRole, useSettings, useMyProfile, useIsSuperAdmin } from "@/hooks/useAppData";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,10 @@ const NAV = [
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { isManager } = useRole();
+  const isSuperAdmin = useIsSuperAdmin();
+  const linkClass =
+    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
+  const activeProps = { className: "bg-sidebar-primary text-sidebar-primary-foreground" };
   return (
     <nav className="flex flex-col gap-1">
       {NAV.filter((n) => !n.manager || isManager).map((n) => (
@@ -42,16 +46,23 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           key={n.to}
           to={n.to}
           onClick={onNavigate}
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground" }}
+          className={linkClass}
+          activeProps={activeProps}
         >
           <n.icon className="size-4 shrink-0" />
           {n.label}
         </Link>
       ))}
+      {isSuperAdmin && (
+        <Link to="/admin" onClick={onNavigate} className={linkClass} activeProps={activeProps}>
+          <ShieldCheck className="size-4 shrink-0" />
+          إدارة الاشتراكات
+        </Link>
+      )}
     </nav>
   );
 }
+
 
 export function AppShell({
   title,
