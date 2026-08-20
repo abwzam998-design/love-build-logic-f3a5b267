@@ -79,8 +79,12 @@ export function AppShell({
 }) {
   const { data: settings } = useSettings();
   const { isManager, user } = useRole();
+  const { data: profile } = useMyProfile();
+  const isSuperAdmin = useIsSuperAdmin();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const suspended = !!profile && profile.is_active === false && !isSuperAdmin;
+
 
   const signOut = async () => {
     await supabase.auth.signOut();
