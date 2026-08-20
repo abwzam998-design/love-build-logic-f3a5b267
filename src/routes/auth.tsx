@@ -259,6 +259,8 @@ function AuthPage() {
             </form>
           </TabsContent>
         </Tabs>
+        )}
+
 
         <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="h-px flex-1 bg-border" /> أو <span className="h-px flex-1 bg-border" />
