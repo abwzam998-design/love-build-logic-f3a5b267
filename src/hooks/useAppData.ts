@@ -61,3 +61,27 @@ export function nextRef(prefix: string) {
   )}${String(d.getSeconds()).padStart(2, "0")}`;
   return `${prefix}-${stamp}`;
 }
+
+export const SUPER_ADMIN_EMAIL = "math77@gmail.com";
+
+export function useMyProfile() {
+  const { data: user } = useCurrentUser();
+  return useQuery({
+    queryKey: ["my-profile", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useIsSuperAdmin() {
+  const { data: user } = useCurrentUser();
+  return (user?.email ?? "").toLowerCase() === SUPER_ADMIN_EMAIL;
+}
