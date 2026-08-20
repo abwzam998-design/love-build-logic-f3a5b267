@@ -167,7 +167,12 @@ export function AppShell({
               </div>
             </SheetContent>
           </Sheet>
+          <div className="flex shrink-0 items-center gap-1.5 lg:hidden">
+            <img src={logo} alt="شعار معاذ سوفت" className="size-7 object-contain" />
+            <span className="text-xs font-bold text-primary">معاذ سوفت</span>
+          </div>
           <div className="min-w-0 flex-1">
+
             <h1 className="truncate text-lg font-bold text-foreground">{title}</h1>
             {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
           </div>
