@@ -34,10 +34,14 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [accountType, setAccountType] = useState<"manager" | "seller">("seller");
   const [loading, setLoading] = useState(false);
+  const [reset, setReset] = useState<null | "request" | "verify" | "password">(null);
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -62,12 +66,44 @@ function AuthPage() {
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { full_name: fullName, role: accountType },
+        data: { full_name: fullName, phone, role: accountType },
       },
     });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     toast.success("تم إنشاء الحساب، يمكنك الدخول الآن");
+    navigate({ to: "/dashboard" });
+  };
+
+  const sendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false },
+    });
+    setLoading(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("تم إرسال رمز التحقق إلى بريدك");
+    setReset("verify");
+  };
+
+  const verifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.verifyOtp({ email, token: otp.trim(), type: "email" });
+    setLoading(false);
+    if (error) { toast.error("رمز غير صحيح أو منتهي"); return; }
+    setReset("password");
+  };
+
+  const savePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("تم تحديث كلمة المرور");
     navigate({ to: "/dashboard" });
   };
 
@@ -79,6 +115,7 @@ function AuthPage() {
     if (result.redirected) return;
     navigate({ to: "/dashboard" });
   };
+
 
 
   return (
