@@ -137,6 +137,46 @@ function AuthPage() {
         </div>
 
 
+        {reset ? (
+          <div className="space-y-3">
+            {reset === "request" && (
+              <form onSubmit={sendOtp} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="reset-email">البريد الإلكتروني للحساب</Label>
+                  <Input id="reset-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  إرسال رمز التحقق
+                </Button>
+              </form>
+            )}
+            {reset === "verify" && (
+              <form onSubmit={verifyOtp} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="otp">رمز التحقق المُرسل إلى {email}</Label>
+                  <Input id="otp" inputMode="numeric" required value={otp} onChange={(e) => setOtp(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  تأكيد الرمز
+                </Button>
+              </form>
+            )}
+            {reset === "password" && (
+              <form onSubmit={savePassword} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="newpass">كلمة المرور الجديدة</Label>
+                  <Input id="newpass" type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  حفظ كلمة المرور
+                </Button>
+              </form>
+            )}
+            <Button variant="ghost" className="w-full" onClick={() => setReset(null)}>
+              العودة لتسجيل الدخول
+            </Button>
+          </div>
+        ) : (
         <Tabs defaultValue="login">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">دخول</TabsTrigger>
@@ -156,6 +196,13 @@ function AuthPage() {
               <Button type="submit" className="w-full" disabled={loading}>
                 تسجيل الدخول
               </Button>
+              <button
+                type="button"
+                onClick={() => setReset("request")}
+                className="block w-full text-center text-xs font-medium text-primary underline-offset-4 hover:underline"
+              >
+                نسيت كلمة المرور؟
+              </button>
             </form>
           </TabsContent>
 
@@ -170,9 +217,14 @@ function AuthPage() {
                 <Input id="email2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div className="space-y-1.5">
+                <Label htmlFor="phone">رقم الجوال</Label>
+                <Input id="phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="password2">كلمة المرور</Label>
                 <Input id="password2" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
+
               <div className="space-y-1.5">
                 <Label>نوع الحساب</Label>
                 <div className="grid grid-cols-2 gap-2">
