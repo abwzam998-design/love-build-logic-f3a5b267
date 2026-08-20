@@ -34,10 +34,14 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [accountType, setAccountType] = useState<"manager" | "seller">("seller");
   const [loading, setLoading] = useState(false);
+  const [reset, setReset] = useState<null | "request" | "verify" | "password">(null);
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -62,12 +66,44 @@ function AuthPage() {
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { full_name: fullName, role: accountType },
+        data: { full_name: fullName, phone, role: accountType },
       },
     });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     toast.success("تم إنشاء الحساب، يمكنك الدخول الآن");
+    navigate({ to: "/dashboard" });
+  };
+
+  const sendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false },
+    });
+    setLoading(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("تم إرسال رمز التحقق إلى بريدك");
+    setReset("verify");
+  };
+
+  const verifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.verifyOtp({ email, token: otp.trim(), type: "email" });
+    setLoading(false);
+    if (error) { toast.error("رمز غير صحيح أو منتهي"); return; }
+    setReset("password");
+  };
+
+  const savePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("تم تحديث كلمة المرور");
     navigate({ to: "/dashboard" });
   };
 
@@ -79,6 +115,7 @@ function AuthPage() {
     if (result.redirected) return;
     navigate({ to: "/dashboard" });
   };
+
 
 
   return (
@@ -100,6 +137,46 @@ function AuthPage() {
         </div>
 
 
+        {reset ? (
+          <div className="space-y-3">
+            {reset === "request" && (
+              <form onSubmit={sendOtp} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="reset-email">البريد الإلكتروني للحساب</Label>
+                  <Input id="reset-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  إرسال رمز التحقق
+                </Button>
+              </form>
+            )}
+            {reset === "verify" && (
+              <form onSubmit={verifyOtp} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="otp">رمز التحقق المُرسل إلى {email}</Label>
+                  <Input id="otp" inputMode="numeric" required value={otp} onChange={(e) => setOtp(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  تأكيد الرمز
+                </Button>
+              </form>
+            )}
+            {reset === "password" && (
+              <form onSubmit={savePassword} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="newpass">كلمة المرور الجديدة</Label>
+                  <Input id="newpass" type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  حفظ كلمة المرور
+                </Button>
+              </form>
+            )}
+            <Button variant="ghost" className="w-full" onClick={() => setReset(null)}>
+              العودة لتسجيل الدخول
+            </Button>
+          </div>
+        ) : (
         <Tabs defaultValue="login">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">دخول</TabsTrigger>
@@ -119,6 +196,13 @@ function AuthPage() {
               <Button type="submit" className="w-full" disabled={loading}>
                 تسجيل الدخول
               </Button>
+              <button
+                type="button"
+                onClick={() => setReset("request")}
+                className="block w-full text-center text-xs font-medium text-primary underline-offset-4 hover:underline"
+              >
+                نسيت كلمة المرور؟
+              </button>
             </form>
           </TabsContent>
 
@@ -133,9 +217,14 @@ function AuthPage() {
                 <Input id="email2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div className="space-y-1.5">
+                <Label htmlFor="phone">رقم الجوال</Label>
+                <Input id="phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="password2">كلمة المرور</Label>
                 <Input id="password2" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
+
               <div className="space-y-1.5">
                 <Label>نوع الحساب</Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -170,6 +259,8 @@ function AuthPage() {
             </form>
           </TabsContent>
         </Tabs>
+        )}
+
 
         <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="h-px flex-1 bg-border" /> أو <span className="h-px flex-1 bg-border" />

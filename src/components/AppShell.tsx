@@ -12,11 +12,13 @@ import {
   Settings,
   Menu,
   LogOut,
+  ShieldCheck,
+
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/moath-soft-logo.png";
 
-import { useRole, useSettings } from "@/hooks/useAppData";
+import { useRole, useSettings, useMyProfile, useIsSuperAdmin } from "@/hooks/useAppData";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -35,6 +37,10 @@ const NAV = [
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { isManager } = useRole();
+  const isSuperAdmin = useIsSuperAdmin();
+  const linkClass =
+    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
+  const activeProps = { className: "bg-sidebar-primary text-sidebar-primary-foreground" };
   return (
     <nav className="flex flex-col gap-1">
       {NAV.filter((n) => !n.manager || isManager).map((n) => (
@@ -42,16 +48,23 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           key={n.to}
           to={n.to}
           onClick={onNavigate}
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground" }}
+          className={linkClass}
+          activeProps={activeProps}
         >
           <n.icon className="size-4 shrink-0" />
           {n.label}
         </Link>
       ))}
+      {isSuperAdmin && (
+        <Link to="/admin" onClick={onNavigate} className={linkClass} activeProps={activeProps}>
+          <ShieldCheck className="size-4 shrink-0" />
+          إدارة الاشتراكات
+        </Link>
+      )}
     </nav>
   );
 }
+
 
 export function AppShell({
   title,
@@ -66,8 +79,12 @@ export function AppShell({
 }) {
   const { data: settings } = useSettings();
   const { isManager, user } = useRole();
+  const { data: profile } = useMyProfile();
+  const isSuperAdmin = useIsSuperAdmin();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const suspended = !!profile && profile.is_active === false && !isSuperAdmin;
+
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -98,8 +115,28 @@ export function AppShell({
   );
 
 
+
+  if (suspended) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-secondary px-4">
+        <div className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-lg">
+          <img src={logo} alt="شعار معاذ سوفت" className="mx-auto size-16 object-contain" />
+          <p className="mt-2 text-sm font-bold text-primary">معاذ سوفت</p>
+          <h1 className="mt-3 text-lg font-bold text-destructive">تم إيقاف الحساب</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            تم إيقاف حسابك / اشتراكك. يرجى التواصل مع إدارة النظام.
+          </p>
+          <Button variant="outline" className="mt-5 w-full gap-2" onClick={signOut}>
+            <LogOut className="size-4" /> تسجيل الخروج
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
+
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-sidebar lg:flex">
         {Brand}
         <div className="flex-1 overflow-y-auto p-3">
@@ -130,7 +167,12 @@ export function AppShell({
               </div>
             </SheetContent>
           </Sheet>
+          <div className="flex shrink-0 items-center gap-1.5 lg:hidden">
+            <img src={logo} alt="شعار معاذ سوفت" className="size-7 object-contain" />
+            <span className="text-xs font-bold text-primary">معاذ سوفت</span>
+          </div>
           <div className="min-w-0 flex-1">
+
             <h1 className="truncate text-lg font-bold text-foreground">{title}</h1>
             {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
           </div>
