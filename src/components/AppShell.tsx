@@ -115,8 +115,28 @@ export function AppShell({
   );
 
 
+
+  if (suspended) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-secondary px-4">
+        <div className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-lg">
+          <img src={logo} alt="شعار معاذ سوفت" className="mx-auto size-16 object-contain" />
+          <p className="mt-2 text-sm font-bold text-primary">معاذ سوفت</p>
+          <h1 className="mt-3 text-lg font-bold text-destructive">تم إيقاف الحساب</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            تم إيقاف حسابك / اشتراكك. يرجى التواصل مع إدارة النظام.
+          </p>
+          <Button variant="outline" className="mt-5 w-full gap-2" onClick={signOut}>
+            <LogOut className="size-4" /> تسجيل الخروج
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
+
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-sidebar lg:flex">
         {Brand}
         <div className="flex-1 overflow-y-auto p-3">
