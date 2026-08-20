@@ -331,20 +331,26 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
+          is_active: boolean
           phone: string | null
         }
         Insert: {
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id: string
+          is_active?: boolean
           phone?: string | null
         }
         Update: {
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
+          is_active?: boolean
           phone?: string | null
         }
         Relationships: []
@@ -643,6 +649,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "manager" | "seller"
