@@ -12,6 +12,8 @@ import {
   Settings,
   Menu,
   LogOut,
+  ShieldCheck,
+
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/moath-soft-logo.png";
