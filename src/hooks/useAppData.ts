@@ -85,3 +85,62 @@ export function useIsSuperAdmin() {
   const { data: user } = useCurrentUser();
   return (user?.email ?? "").toLowerCase() === SUPER_ADMIN_EMAIL;
 }
+
+export type EntityKind = "customer" | "supplier" | "employee";
+
+export type Entity = {
+  id: string;
+  kind: string;
+  name: string;
+  phone: string | null;
+  notes: string | null;
+  opening_balance: number;
+  is_active: boolean;
+  created_at: string;
+};
+
+export const ENTITY_KINDS: { value: EntityKind; label: string }[] = [
+  { value: "customer", label: "عميل" },
+  { value: "supplier", label: "مورد" },
+  { value: "employee", label: "موظف" },
+];
+
+export const entityKindLabel = (k: string) =>
+  ENTITY_KINDS.find((x) => x.value === k)?.label ?? k;
+
+export function useEntities(kind?: EntityKind) {
+  return useQuery({
+    queryKey: ["entities", kind ?? "all"],
+    queryFn: async () => {
+      let q = supabase.from("entities").select("*").order("name");
+      if (kind) q = q.eq("kind", kind);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as unknown as Entity[];
+    },
+  });
+}
+
+/** يعيد معرّف الحساب، وينشئه إن لم يكن موجوداً */
+export async function ensureEntity(kind: EntityKind, name: string, phone?: string | null) {
+  const clean = name.trim();
+  if (!clean) return null;
+  const { data: found } = await supabase
+    .from("entities")
+    .select("id")
+    .eq("kind", kind)
+    .ilike("name", clean)
+    .limit(1)
+    .maybeSingle();
+  if (found?.id) {
+    if (phone?.trim()) await supabase.from("entities").update({ phone: phone.trim() }).eq("id", found.id);
+    return found.id as string;
+  }
+  const { data: created, error } = await supabase
+    .from("entities")
+    .insert({ kind, name: clean, phone: phone?.trim() || null })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return created.id as string;
+}

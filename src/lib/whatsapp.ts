@@ -35,3 +35,9 @@ export function openWhatsApp(phone: string | null | undefined, message: string) 
     : `https://wa.me/?text=${encodeURIComponent(message)}`;
   window.open(url, "_blank", "noopener");
 }
+
+export function openSMS(phone: string | null | undefined, message: string) {
+  const p = normalizePhone(phone);
+  const url = `sms:${p ? `+${p}` : ""}?&body=${encodeURIComponent(message)}`;
+  window.location.href = url;
+}
