@@ -71,6 +71,45 @@ export type Database = {
         }
         Relationships: []
       }
+      entities: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          name: string
+          notes: string | null
+          opening_balance: number
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name: string
+          notes?: string | null
+          opening_balance?: number
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name?: string
+          notes?: string | null
+          opening_balance?: number
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -107,6 +146,7 @@ export type Database = {
       invoice_items: {
         Row: {
           created_at: string
+          discount: number
           id: string
           invoice_id: string
           item_name: string
@@ -119,6 +159,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          discount?: number
           id?: string
           invoice_id: string
           item_name: string
@@ -131,6 +172,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          discount?: number
           id?: string
           invoice_id?: string
           item_name?: string
@@ -165,6 +207,8 @@ export type Database = {
           customer_id: string | null
           customer_name: string
           customer_phone: string | null
+          discount: number
+          entity_id: string | null
           id: string
           invoice_date: string
           invoice_no: string
@@ -181,6 +225,8 @@ export type Database = {
           customer_id?: string | null
           customer_name: string
           customer_phone?: string | null
+          discount?: number
+          entity_id?: string | null
           id?: string
           invoice_date?: string
           invoice_no: string
@@ -197,6 +243,8 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string
           customer_phone?: string | null
+          discount?: number
+          entity_id?: string | null
           id?: string
           invoice_date?: string
           invoice_no?: string
@@ -213,6 +261,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
             referencedColumns: ["id"]
           },
         ]
@@ -249,36 +304,55 @@ export type Database = {
           amount: number
           created_at: string
           created_by: string | null
+          direction: string
+          entity_id: string | null
           id: string
           invoice_id: string | null
+          method: string
           notes: string | null
           paid_at: string
           purchase_id: string | null
+          receipt_no: string | null
           ref_type: string
         }
         Insert: {
           amount?: number
           created_at?: string
           created_by?: string | null
+          direction?: string
+          entity_id?: string | null
           id?: string
           invoice_id?: string | null
+          method?: string
           notes?: string | null
           paid_at?: string
           purchase_id?: string | null
+          receipt_no?: string | null
           ref_type: string
         }
         Update: {
           amount?: number
           created_at?: string
           created_by?: string | null
+          direction?: string
+          entity_id?: string | null
           id?: string
           invoice_id?: string | null
+          method?: string
           notes?: string | null
           paid_at?: string
           purchase_id?: string | null
+          receipt_no?: string | null
           ref_type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payments_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payments_invoice_id_fkey"
             columns: ["invoice_id"]
@@ -358,6 +432,7 @@ export type Database = {
       purchase_items: {
         Row: {
           created_at: string
+          discount: number
           id: string
           item_name: string
           line_total: number
@@ -369,6 +444,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          discount?: number
           id?: string
           item_name: string
           line_total?: number
@@ -380,6 +456,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          discount?: number
           id?: string
           item_name?: string
           line_total?: number
@@ -410,6 +487,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          discount: number
+          entity_id: string | null
           id: string
           notes: string | null
           paid: number
@@ -425,6 +504,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          discount?: number
+          entity_id?: string | null
           id?: string
           notes?: string | null
           paid?: number
@@ -440,6 +521,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          discount?: number
+          entity_id?: string | null
           id?: string
           notes?: string | null
           paid?: number
@@ -453,6 +536,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "purchases_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchases_supplier_id_fkey"
             columns: ["supplier_id"]
