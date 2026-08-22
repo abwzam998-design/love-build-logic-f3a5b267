@@ -7,8 +7,10 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NumberInput } from "@/components/NumberInput";
+import { EntityPicker } from "@/components/EntityPicker";
 import { money, dateOnly, num, SALE_KINDS, SALE_UNITS, PAYMENT_TYPES } from "@/lib/format";
-import { nextRef, useProducts } from "@/hooks/useAppData";
+import { ensureEntity, nextRef, useProducts, type Entity } from "@/hooks/useAppData";
 import { Trash2, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/sales")({
@@ -31,6 +33,7 @@ type Line = {
   quantity: number;
   unit: string;
   unit_price: number;
+  discount: number;
   sale_kind: string;
   product_id: string | null;
 };
@@ -40,21 +43,27 @@ const emptyLine: Line = {
   quantity: 1,
   unit: SALE_UNITS[0]!,
   unit_price: 0,
+  discount: 0,
   sale_kind: SALE_KINDS[0]!,
   product_id: null,
 };
+
+const lineTotal = (l: Line) =>
+  Math.max(0, num(l.quantity) * num(l.unit_price) - num(l.discount));
 
 function SalesPage() {
   const qc = useQueryClient();
   const { data: products } = useProducts();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [picked, setPicked] = useState<Entity | null>(null);
   const [paymentType, setPaymentType] = useState(PAYMENT_TYPES[0]!);
   const [paid, setPaid] = useState(0);
   const [lines, setLines] = useState<Line[]>([{ ...emptyLine }]);
   const [saving, setSaving] = useState(false);
 
-  const total = lines.reduce((a, l) => a + num(l.quantity) * num(l.unit_price), 0);
+  const total = lines.reduce((a, l) => a + lineTotal(l), 0);
+  const totalDiscount = lines.reduce((a, l) => a + num(l.discount), 0);
 
   const { data: invoices } = useQuery({
     queryKey: ["invoices-recent"],
@@ -77,47 +86,72 @@ function SalesPage() {
     const valid = lines.filter((l) => l.item_name.trim() && num(l.quantity) > 0);
     if (!valid.length) { toast.error("أضف صنفاً واحداً على الأقل"); return; }
     setSaving(true);
-    const paidAmount = paymentType === "نقدي" ? total : num(paid);
-    const { data: user } = await supabase.auth.getUser();
-    const { data: inv, error } = await supabase
-      .from("invoices")
-      .insert({
-        invoice_no: nextRef("INV"),
-        customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim() || null,
-        payment_type: paymentType,
-        sale_type: valid[0]!.sale_kind,
-        total,
-        paid: paidAmount,
-        created_by: user.user?.id ?? null,
-      })
-      .select()
-      .single();
-    if (error || !inv) {
+    try {
+      const paidAmount = paymentType === "نقدي" ? total : num(paid);
+      const entityId = picked?.id ?? (await ensureEntity("customer", customerName, customerPhone));
+      const { data: user } = await supabase.auth.getUser();
+      const { data: inv, error } = await supabase
+        .from("invoices")
+        .insert({
+          invoice_no: nextRef("INV"),
+          customer_name: customerName.trim(),
+          customer_phone: customerPhone.trim() || null,
+          entity_id: entityId,
+          payment_type: paymentType,
+          sale_type: valid[0]!.sale_kind,
+          total,
+          paid: paidAmount,
+          discount: totalDiscount,
+          created_by: user.user?.id ?? null,
+        })
+        .select()
+        .single();
+      if (error || !inv) throw error ?? new Error("تعذر الحفظ");
+
+      const { error: itemsError } = await supabase.from("invoice_items").insert(
+        valid.map((l) => ({
+          invoice_id: inv.id,
+          item_name: l.item_name.trim(),
+          product_id: l.product_id,
+          quantity: num(l.quantity),
+          unit: l.unit,
+          unit_price: num(l.unit_price),
+          discount: num(l.discount),
+          line_total: lineTotal(l),
+          sale_kind: l.sale_kind,
+        })),
+      );
+      if (itemsError) throw itemsError;
+
+      if (paidAmount > 0 && entityId) {
+        await supabase.from("payments").insert({
+          ref_type: "invoice",
+          invoice_id: inv.id,
+          entity_id: entityId,
+          direction: "in",
+          method: "نقدي",
+          receipt_no: nextRef("RCV"),
+          amount: paidAmount,
+          notes: `واصل مع الفاتورة ${inv.invoice_no}`,
+          created_by: user.user?.id ?? null,
+        });
+      }
+
+      toast.success("تم حفظ الفاتورة");
+      setCustomerName("");
+      setCustomerPhone("");
+      setPicked(null);
+      setPaid(0);
+      setLines([{ ...emptyLine }]);
+      qc.invalidateQueries({ queryKey: ["invoices-recent"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["receipts"] });
+      qc.invalidateQueries({ queryKey: ["entities"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "تعذر الحفظ");
+    } finally {
       setSaving(false);
-      { toast.error(error?.message ?? "تعذر الحفظ"); return; }
     }
-    const { error: itemsError } = await supabase.from("invoice_items").insert(
-      valid.map((l) => ({
-        invoice_id: inv.id,
-        item_name: l.item_name.trim(),
-        product_id: l.product_id,
-        quantity: num(l.quantity),
-        unit: l.unit,
-        unit_price: num(l.unit_price),
-        line_total: num(l.quantity) * num(l.unit_price),
-        sale_kind: l.sale_kind,
-      })),
-    );
-    setSaving(false);
-    if (itemsError) { toast.error(itemsError.message); return; }
-    toast.success("تم حفظ الفاتورة");
-    setCustomerName("");
-    setCustomerPhone("");
-    setPaid(0);
-    setLines([{ ...emptyLine }]);
-    qc.invalidateQueries({ queryKey: ["invoices-recent"] });
-    qc.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
   return (
@@ -126,7 +160,17 @@ function SalesPage() {
         <div className="grid gap-3 md:grid-cols-4">
           <div className="space-y-1.5">
             <Label>اسم العميل</Label>
-            <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+            <EntityPicker
+              kind="customer"
+              name={customerName}
+              phone={customerPhone}
+              namePlaceholder="اكتب أول حرف للبحث"
+              onPick={(v) => {
+                setCustomerName(v.name);
+                setCustomerPhone(v.phone);
+                setPicked(v.entity);
+              }}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>رقم الجوال</Label>
@@ -145,19 +189,20 @@ function SalesPage() {
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label>المدفوع</Label>
-            <Input
-              type="number"
+            <Label>الواصل (المدفوع)</Label>
+            <NumberInput
               value={paymentType === "نقدي" ? total : paid}
+              onValueChange={setPaid}
               disabled={paymentType === "نقدي"}
-              onChange={(e) => setPaid(num(e.target.value))}
+              min={0}
+              decimals={2}
             />
           </div>
         </div>
 
         <div className="mt-4 space-y-3">
           {lines.map((l, i) => (
-            <div key={i} className="grid gap-2 rounded-lg border p-3 md:grid-cols-6">
+            <div key={i} className="grid gap-2 rounded-lg border p-3 md:grid-cols-7">
               <div className="md:col-span-2">
                 <Input
                   list="products-list"
@@ -174,11 +219,12 @@ function SalesPage() {
                   }}
                 />
               </div>
-              <Input
-                type="number"
+              <NumberInput
                 placeholder="الكمية"
                 value={l.quantity}
-                onChange={(e) => setLine(i, { quantity: num(e.target.value) })}
+                onValueChange={(n) => setLine(i, { quantity: n })}
+                min={0}
+                decimals={3}
               />
               <select
                 className="h-9 rounded-md border bg-background px-2 text-sm"
@@ -189,11 +235,19 @@ function SalesPage() {
                   <option key={u}>{u}</option>
                 ))}
               </select>
-              <Input
-                type="number"
+              <NumberInput
                 placeholder="السعر"
                 value={l.unit_price}
-                onChange={(e) => setLine(i, { unit_price: num(e.target.value) })}
+                onValueChange={(n) => setLine(i, { unit_price: n })}
+                min={0}
+                decimals={2}
+              />
+              <NumberInput
+                placeholder="الخصم"
+                value={l.discount}
+                onValueChange={(n) => setLine(i, { discount: n })}
+                min={0}
+                decimals={2}
               />
               <div className="flex items-center gap-2">
                 <select
@@ -213,6 +267,9 @@ function SalesPage() {
                   <Trash2 className="size-4" />
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground md:col-span-7">
+                إجمالي السطر: {money(lineTotal(l))}
+              </p>
             </div>
           ))}
           <datalist id="products-list">
@@ -226,7 +283,13 @@ function SalesPage() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-          <p className="text-lg font-bold">الإجمالي: {money(total)}</p>
+          <div>
+            <p className="text-lg font-bold">الإجمالي: {money(total)}</p>
+            <p className="text-xs text-muted-foreground">
+              الخصم: {money(totalDiscount)} · المتبقي:{" "}
+              {money(total - (paymentType === "نقدي" ? total : num(paid)))}
+            </p>
+          </div>
           <Button onClick={save} disabled={saving}>
             حفظ الفاتورة
           </Button>
