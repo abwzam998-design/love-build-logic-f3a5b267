@@ -30,8 +30,9 @@ function AccountsPage() {
   const { data: entities } = useEntities();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | EntityKind>("all");
-  const [form, setForm] = useState({ name: "", phone: "", kind: "customer" as EntityKind, notes: "" });
+  const [form, setForm] = useState({ name: "", phone: "", kind: "customer" as EntityKind, notes: "", credit_limit: 0 });
   const [saving, setSaving] = useState(false);
+  const [limits, setLimits] = useState<Record<string, string>>({});
 
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -48,13 +49,24 @@ function AccountsPage() {
       name: form.name.trim(),
       phone: form.phone.trim() || null,
       notes: form.notes.trim() || null,
+      credit_limit: Number(form.credit_limit) || 0,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("تمت إضافة الحساب");
-    setForm({ name: "", phone: "", kind: form.kind, notes: "" });
+    setForm({ name: "", phone: "", kind: form.kind, notes: "", credit_limit: 0 });
     qc.invalidateQueries({ queryKey: ["entities"] });
   };
+
+  const saveLimit = async (id: string) => {
+    const value = Number(limits[id] ?? 0) || 0;
+    const { error } = await supabase.from("entities").update({ credit_limit: value }).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("تم تحديث سقف الدين");
+    setLimits((l) => { const n = { ...l }; delete n[id]; return n; });
+    qc.invalidateQueries({ queryKey: ["entities"] });
+  };
+
 
   return (
     <AppShell title="الحسابات" subtitle="العملاء والموردين والموظفين">
