@@ -75,6 +75,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          credit_limit: number
           id: string
           is_active: boolean
           kind: string
@@ -87,6 +88,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          credit_limit?: number
           id?: string
           is_active?: boolean
           kind?: string
@@ -99,6 +101,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          credit_limit?: number
           id?: string
           is_active?: boolean
           kind?: string

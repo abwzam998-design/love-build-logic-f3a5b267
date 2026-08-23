@@ -95,9 +95,31 @@ export type Entity = {
   phone: string | null;
   notes: string | null;
   opening_balance: number;
+  credit_limit: number;
   is_active: boolean;
   created_at: string;
 };
+
+/** رصيد العميل الحالي (المتبقي عليه) */
+export async function customerOutstanding(entityId: string) {
+  const { data: ent } = await supabase
+    .from("entities")
+    .select("opening_balance, credit_limit, name, phone")
+    .eq("id", entityId)
+    .maybeSingle();
+  const { data: invs } = await supabase
+    .from("invoices")
+    .select("total, paid")
+    .eq("entity_id", entityId);
+  const unpaid = (invs ?? []).reduce((a, i) => a + Number(i.total) - Number(i.paid), 0);
+  return {
+    balance: Number(ent?.opening_balance ?? 0) + unpaid,
+    creditLimit: Number((ent as any)?.credit_limit ?? 0),
+    name: ent?.name ?? "",
+    phone: (ent?.phone as string | null) ?? null,
+  };
+}
+
 
 export const ENTITY_KINDS: { value: EntityKind; label: string }[] = [
   { value: "customer", label: "عميل" },
