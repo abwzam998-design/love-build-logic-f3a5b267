@@ -72,8 +72,8 @@ function LedgerPage() {
     qc.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
-  const remind = (invoice: any) => {
-    const msg = buildMessage(settings?.debt_message_template ?? "{name} لديك مبلغ {amount}", {
+  const buildMsg = (invoice: any) =>
+    buildMessage(settings?.debt_message_template ?? "{name} لديك مبلغ {amount}", {
       name: invoice.customer_name,
       amount: Number(invoice.total) - Number(invoice.paid),
       total: Number(invoice.total),
@@ -83,8 +83,6 @@ function LedgerPage() {
       currency: settings?.currency ?? "ريال",
       business: settings?.business_name ?? "",
     });
-    openWhatsApp(invoice.customer_phone, msg);
-  };
 
   return (
     <AppShell title="الإجماليات والديون" subtitle="الفواتير غير المسددة">
