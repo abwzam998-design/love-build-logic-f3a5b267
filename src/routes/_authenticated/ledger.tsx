@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { money, num } from "@/lib/format";
 import { useSettings } from "@/hooks/useAppData";
-import { buildMessage, openWhatsApp } from "@/lib/whatsapp";
-import { MessageCircle } from "lucide-react";
+import { buildMessage } from "@/lib/whatsapp";
+import { MessageButtons } from "@/components/MessageButtons";
 
 export const Route = createFileRoute("/_authenticated/ledger")({
   ssr: false,
@@ -72,8 +72,8 @@ function LedgerPage() {
     qc.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
-  const remind = (invoice: any) => {
-    const msg = buildMessage(settings?.debt_message_template ?? "{name} لديك مبلغ {amount}", {
+  const buildMsg = (invoice: any) =>
+    buildMessage(settings?.debt_message_template ?? "{name} لديك مبلغ {amount}", {
       name: invoice.customer_name,
       amount: Number(invoice.total) - Number(invoice.paid),
       total: Number(invoice.total),
@@ -83,8 +83,6 @@ function LedgerPage() {
       currency: settings?.currency ?? "ريال",
       business: settings?.business_name ?? "",
     });
-    openWhatsApp(invoice.customer_phone, msg);
-  };
 
   return (
     <AppShell title="الإجماليات والديون" subtitle="الفواتير غير المسددة">
@@ -107,7 +105,7 @@ function LedgerPage() {
                 </div>
                 <p className="text-lg font-bold text-destructive">{money(remaining)}</p>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Input
                   type="number"
                   className="w-32"
@@ -116,9 +114,7 @@ function LedgerPage() {
                   onChange={(e) => setAmounts((a) => ({ ...a, [i.id]: num(e.target.value) }))}
                 />
                 <Button onClick={() => pay(i)}>تسديد</Button>
-                <Button variant="outline" onClick={() => remind(i)}>
-                  <MessageCircle className="size-4" /> مطالبة واتساب
-                </Button>
+                <MessageButtons phone={i.customer_phone} message={buildMsg(i)} />
               </div>
             </div>
           );
