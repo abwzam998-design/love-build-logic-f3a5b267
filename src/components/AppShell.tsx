@@ -27,6 +27,8 @@ const NAV = [
   { to: "/dashboard", label: "لوحة اليوم", icon: LayoutDashboard, manager: false },
   { to: "/sales", label: "المبيعات", icon: ShoppingCart, manager: false },
   { to: "/ledger", label: "الإجماليات والديون", icon: Receipt, manager: false },
+  { to: "/accounts", label: "الحسابات", icon: UserCog, manager: false },
+  { to: "/receipts", label: "السندات", icon: Receipt, manager: false },
   { to: "/purchases", label: "المشتريات والموردين", icon: Truck, manager: false },
   { to: "/inventory", label: "المخزون والهالك", icon: Boxes, manager: true },
   { to: "/expenses", label: "المصروفات والإيجارات", icon: Wallet, manager: true },

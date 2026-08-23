@@ -107,7 +107,7 @@ function LedgerPage() {
                 </div>
                 <p className="text-lg font-bold text-destructive">{money(remaining)}</p>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Input
                   type="number"
                   className="w-32"
@@ -116,9 +116,7 @@ function LedgerPage() {
                   onChange={(e) => setAmounts((a) => ({ ...a, [i.id]: num(e.target.value) }))}
                 />
                 <Button onClick={() => pay(i)}>تسديد</Button>
-                <Button variant="outline" onClick={() => remind(i)}>
-                  <MessageCircle className="size-4" /> مطالبة واتساب
-                </Button>
+                <MessageButtons phone={i.customer_phone} message={buildMsg(i)} />
               </div>
             </div>
           );
