@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { money, num } from "@/lib/format";
 import { useSettings } from "@/hooks/useAppData";
-import { buildMessage, openWhatsApp } from "@/lib/whatsapp";
-import { MessageCircle } from "lucide-react";
+import { buildMessage } from "@/lib/whatsapp";
+import { MessageButtons } from "@/components/MessageButtons";
 
 export const Route = createFileRoute("/_authenticated/ledger")({
   ssr: false,
