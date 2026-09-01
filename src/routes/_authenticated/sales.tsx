@@ -91,6 +91,44 @@ function SalesPage() {
   const setLine = (i: number, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
 
+  const shareInvoice = async (inv: any, mode: "pdf" | "wa") => {
+    const { data: items, error } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", inv.id);
+    if (error) { toast.error(error.message); return; }
+    const doc: InvoiceDoc = {
+      invoice_no: inv.invoice_no,
+      customer_name: inv.customer_name,
+      customer_phone: inv.customer_phone,
+      invoice_date: inv.invoice_date,
+      payment_type: inv.payment_type,
+      total: inv.total,
+      paid: inv.paid,
+      discount: inv.discount,
+      notes: inv.notes,
+      items: (items ?? []).map((it) => ({
+        item_name: it.item_name,
+        quantity: it.quantity,
+        unit: it.unit,
+        unit_price: it.unit_price,
+        discount: it.discount,
+        line_total: it.line_total,
+      })),
+    };
+    const biz = {
+      business: settings?.business_name ?? "منشأتي",
+      currency: settings?.currency ?? "ريال",
+      phone: settings?.phone ?? null,
+      address: settings?.address ?? null,
+    };
+    if (mode === "pdf") {
+      if (!printInvoicePdf(doc, biz)) toast.error("فضلاً اسمح بالنوافذ المنبثقة لطباعة الفاتورة");
+    } else {
+      openWhatsApp(inv.customer_phone, invoiceText(doc, biz));
+    }
+  };
+
   const save = async () => {
     if (!customerName.trim()) { toast.error("أدخل اسم العميل"); return; }
     const valid = lines.filter((l) => l.item_name.trim() && num(l.quantity) > 0);
