@@ -63,6 +63,7 @@ const lineTotal = (l: Line) =>
 function SalesPage() {
   const qc = useQueryClient();
   const { data: products } = useProducts();
+  const { data: settings } = useSettings();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [picked, setPicked] = useState<Entity | null>(null);
