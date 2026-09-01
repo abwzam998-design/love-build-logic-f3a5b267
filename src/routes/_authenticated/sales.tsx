@@ -99,6 +99,26 @@ function SalesPage() {
     try {
       const paidAmount = paymentType === "نقدي" ? total : num(paid);
       const entityId = picked?.id ?? (await ensureEntity("customer", customerName, customerPhone));
+
+      // منع تجاوز سقف الدين للعميل
+      const newDebt = total - paidAmount;
+      if (entityId && newDebt > 0) {
+        const info = await customerOutstanding(entityId);
+        if (info.creditLimit > 0 && info.balance + newDebt > info.creditLimit) {
+          const currency = settings?.currency ?? "ريال";
+          const business = settings?.business_name ?? "منشأتي";
+          const msg =
+            `السلام عليكم ${info.name || customerName} 👋\n` +
+            `لقد وصلتم إلى الحد الأقصى المسموح به للدين (${money(info.creditLimit)} ${currency}).\n` +
+            `الرصيد الحالي عليكم: ${money(info.balance)} ${currency}.\n` +
+            `نرجو التكرم بسداد ما عليكم لإتمام عمليات الشراء الآجلة. شكراً لتعاملكم معنا - ${business}`;
+          toast.error("تم إيقاف البيع الآجل: العميل تجاوز سقف الدين");
+          openWhatsApp(info.phone || customerPhone, msg);
+          setSaving(false);
+          return;
+        }
+      }
+
       const { data: user } = await supabase.auth.getUser();
       const { data: inv, error } = await supabase
         .from("invoices")
