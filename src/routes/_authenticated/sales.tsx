@@ -336,6 +336,7 @@ function SalesPage() {
               <th className="p-2 text-right">التاريخ</th>
               <th className="p-2 text-right">الإجمالي</th>
               <th className="p-2 text-right">المتبقي</th>
+              <th className="p-2 text-right">إجراءات</th>
             </tr>
           </thead>
           <tbody>
@@ -346,6 +347,16 @@ function SalesPage() {
                 <td className="p-2">{dateOnly(i.invoice_date)}</td>
                 <td className="p-2">{money(i.total)}</td>
                 <td className="p-2">{money(Number(i.total) - Number(i.paid))}</td>
+                <td className="p-2">
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" onClick={() => shareInvoice(i, "pdf")}>
+                      <FileDown className="size-4" /> PDF
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => shareInvoice(i, "wa")}>
+                      <Send className="size-4" /> واتساب
+                    </Button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
