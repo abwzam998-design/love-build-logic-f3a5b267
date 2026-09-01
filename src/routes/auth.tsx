@@ -119,8 +119,11 @@ function AuthPage() {
 
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-lg">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-sidebar px-4 py-10">
+      <div className="pointer-events-none absolute -top-32 -left-32 size-96 rounded-full bg-primary/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -right-32 size-96 rounded-full bg-primary-glow/25 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/4 right-1/4 size-40 rounded-full bg-chart-4/20 blur-2xl" />
+      <div className="relative w-full max-w-md rounded-3xl border bg-card p-6 shadow-[0_24px_60px_-16px_rgba(0,0,0,0.45)]">
         <div className="mb-6 text-center">
           <img
             src={logo}

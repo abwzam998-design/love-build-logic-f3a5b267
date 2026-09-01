@@ -41,8 +41,11 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { isManager } = useRole();
   const isSuperAdmin = useIsSuperAdmin();
   const linkClass =
-    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
-  const activeProps = { className: "bg-sidebar-primary text-sidebar-primary-foreground" };
+    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/75 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-[-2px]";
+  const activeProps = {
+    className:
+      "bg-sidebar-primary text-sidebar-primary-foreground font-bold shadow-[0_4px_14px_-4px_var(--sidebar-primary)]",
+  };
   return (
     <nav className="flex flex-col gap-1">
       {NAV.filter((n) => !n.manager || isManager).map((n) => (
@@ -94,20 +97,22 @@ export function AppShell({
   };
 
   const Brand = (
-    <div className="border-b border-sidebar-border px-4 py-4">
-      <div className="flex items-center gap-2">
-        <img
-          src={logo}
-          alt="شعار معاذ سوفت"
-          width={816}
-          height={816}
-          className="size-9 shrink-0 object-contain"
-        />
+    <div className="border-b border-sidebar-border px-4 py-5">
+      <div className="flex items-center gap-3">
+        <div className="rounded-2xl bg-white/95 p-1.5 shadow-[0_4px_14px_-4px_rgba(0,0,0,0.4)]">
+          <img
+            src={logo}
+            alt="شعار معاذ سوفت"
+            width={816}
+            height={816}
+            className="size-8 shrink-0 object-contain"
+          />
+        </div>
         <div className="min-w-0">
-          <p className="text-base font-bold text-sidebar-foreground">
+          <p className="truncate text-base font-bold text-sidebar-foreground">
             {settings?.business_name ?? "نظام الإدارة"}
           </p>
-          <p className="text-[11px] font-medium text-primary">معاذ سوفت</p>
+          <p className="text-[11px] font-bold tracking-wide text-sidebar-primary">معاذ سوفت</p>
         </div>
       </div>
       <p className="mt-1.5 truncate text-xs text-sidebar-foreground/60">
@@ -139,7 +144,7 @@ export function AppShell({
   return (
     <div className="flex min-h-screen bg-background">
 
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-sidebar lg:flex">
+      <aside className="sidebar-surface sticky top-0 hidden h-screen w-64 shrink-0 flex-col lg:flex">
         {Brand}
         <div className="flex-1 overflow-y-auto p-3">
           <NavLinks />
@@ -152,7 +157,7 @@ export function AppShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-card/90 px-4 py-3 backdrop-blur">
+        <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-card/80 px-4 py-3 shadow-sm backdrop-blur-md">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="lg:hidden">
@@ -180,7 +185,7 @@ export function AppShell({
           </div>
           {actions}
         </header>
-        <main className={cn("flex-1 p-4 md:p-6")}>{children}</main>
+        <main className={cn("page-surface flex-1 p-4 md:p-6")}>{children}</main>
       </div>
     </div>
   );
@@ -197,16 +202,33 @@ export function StatCard({
   hint?: string;
   tone?: "default" | "good" | "bad" | "warn";
 }) {
-  const toneClass = {
-    default: "text-foreground",
-    good: "text-primary",
-    bad: "text-destructive",
-    warn: "text-chart-4",
+  const tones = {
+    default: {
+      bar: "from-chart-3 to-chart-3/60",
+      icon: "bg-chart-3/10 text-chart-3",
+      value: "text-foreground",
+    },
+    good: {
+      bar: "from-primary to-primary-glow",
+      icon: "bg-primary/10 text-primary",
+      value: "text-primary",
+    },
+    bad: {
+      bar: "from-destructive to-destructive/60",
+      icon: "bg-destructive/10 text-destructive",
+      value: "text-destructive",
+    },
+    warn: {
+      bar: "from-chart-4 to-chart-4/60",
+      icon: "bg-chart-4/15 text-chart-4",
+      value: "text-chart-4",
+    },
   }[tone];
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
+    <div className="group relative overflow-hidden rounded-2xl border bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover">
+      <div className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-l", tones.bar)} />
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className={cn("mt-1 text-2xl font-bold tabular-nums", toneClass)}>{value}</p>
+      <p className={cn("mt-1.5 text-2xl font-bold tabular-nums", tones.value)}>{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
