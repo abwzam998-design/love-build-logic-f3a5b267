@@ -10,8 +10,17 @@ import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/NumberInput";
 import { EntityPicker } from "@/components/EntityPicker";
 import { money, dateOnly, num, SALE_KINDS, SALE_UNITS, PAYMENT_TYPES } from "@/lib/format";
-import { ensureEntity, nextRef, useProducts, type Entity } from "@/hooks/useAppData";
-import { Trash2, Plus } from "lucide-react";
+import {
+  customerOutstanding,
+  ensureEntity,
+  nextRef,
+  useProducts,
+  useSettings,
+  type Entity,
+} from "@/hooks/useAppData";
+import { openWhatsApp } from "@/lib/whatsapp";
+import { invoiceText, printInvoicePdf, type InvoiceDoc } from "@/lib/invoiceDoc";
+import { Trash2, Plus, FileDown, Send } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/sales")({
   ssr: false,
