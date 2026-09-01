@@ -41,8 +41,11 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { isManager } = useRole();
   const isSuperAdmin = useIsSuperAdmin();
   const linkClass =
-    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
-  const activeProps = { className: "bg-sidebar-primary text-sidebar-primary-foreground" };
+    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/75 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-[-2px]";
+  const activeProps = {
+    className:
+      "bg-sidebar-primary text-sidebar-primary-foreground font-bold shadow-[0_4px_14px_-4px_var(--sidebar-primary)]",
+  };
   return (
     <nav className="flex flex-col gap-1">
       {NAV.filter((n) => !n.manager || isManager).map((n) => (
@@ -94,20 +97,22 @@ export function AppShell({
   };
 
   const Brand = (
-    <div className="border-b border-sidebar-border px-4 py-4">
-      <div className="flex items-center gap-2">
-        <img
-          src={logo}
-          alt="شعار معاذ سوفت"
-          width={816}
-          height={816}
-          className="size-9 shrink-0 object-contain"
-        />
+    <div className="border-b border-sidebar-border px-4 py-5">
+      <div className="flex items-center gap-3">
+        <div className="rounded-2xl bg-white/95 p-1.5 shadow-[0_4px_14px_-4px_rgba(0,0,0,0.4)]">
+          <img
+            src={logo}
+            alt="شعار معاذ سوفت"
+            width={816}
+            height={816}
+            className="size-8 shrink-0 object-contain"
+          />
+        </div>
         <div className="min-w-0">
-          <p className="text-base font-bold text-sidebar-foreground">
+          <p className="truncate text-base font-bold text-sidebar-foreground">
             {settings?.business_name ?? "نظام الإدارة"}
           </p>
-          <p className="text-[11px] font-medium text-primary">معاذ سوفت</p>
+          <p className="text-[11px] font-bold tracking-wide text-sidebar-primary">معاذ سوفت</p>
         </div>
       </div>
       <p className="mt-1.5 truncate text-xs text-sidebar-foreground/60">
