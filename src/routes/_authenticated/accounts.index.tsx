@@ -96,6 +96,15 @@ function AccountsPage() {
             <Label>ملاحظات</Label>
             <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
+          <div className="space-y-1.5">
+            <Label>سقف الدين (0 = بدون حد)</Label>
+            <Input
+              type="number"
+              min={0}
+              value={form.credit_limit}
+              onChange={(e) => setForm({ ...form, credit_limit: Number(e.target.value) || 0 })}
+            />
+          </div>
         </div>
         <div className="mt-3 flex justify-end">
           <Button onClick={add} disabled={saving}>
