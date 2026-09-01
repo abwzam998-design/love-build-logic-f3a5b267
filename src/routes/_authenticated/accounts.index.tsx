@@ -137,22 +137,41 @@ function AccountsPage() {
 
       <div className="mt-3 space-y-2">
         {list.map((e) => (
-          <Link
-            key={e.id}
-            to="/accounts/$id"
-            params={{ id: e.id }}
-            className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3 transition-colors hover:bg-accent"
-          >
-            <div>
-              <p className="font-bold">{e.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {entityKindLabel(e.kind)} {e.phone ? `· ${e.phone}` : ""}
-              </p>
+          <div key={e.id} className="rounded-xl border bg-card p-3">
+            <Link
+              to="/accounts/$id"
+              params={{ id: e.id }}
+              className="flex items-center justify-between gap-3 rounded-lg transition-colors hover:opacity-80"
+            >
+              <div>
+                <p className="font-bold">{e.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {entityKindLabel(e.kind)} {e.phone ? `· ${e.phone}` : ""}
+                </p>
+              </div>
+              <span className="flex items-center gap-1 text-xs text-primary">
+                <FileText className="size-4" /> كشف حساب
+              </span>
+            </Link>
+            <div className="mt-2 flex items-center gap-2 border-t pt-2">
+              <Label className="text-xs whitespace-nowrap">سقف الدين</Label>
+              <Input
+                type="number"
+                min={0}
+                className="h-8 max-w-36"
+                value={limits[e.id] ?? String(e.credit_limit ?? 0)}
+                onChange={(ev) => setLimits((l) => ({ ...l, [e.id]: ev.target.value }))}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={limits[e.id] === undefined}
+                onClick={() => saveLimit(e.id)}
+              >
+                حفظ
+              </Button>
             </div>
-            <span className="flex items-center gap-1 text-xs text-primary">
-              <FileText className="size-4" /> كشف حساب
-            </span>
-          </Link>
+          </div>
         ))}
         {!list.length && <p className="text-sm text-muted-foreground">لا توجد حسابات مطابقة.</p>}
       </div>
