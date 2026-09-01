@@ -10,8 +10,17 @@ import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/NumberInput";
 import { EntityPicker } from "@/components/EntityPicker";
 import { money, dateOnly, num, SALE_KINDS, SALE_UNITS, PAYMENT_TYPES } from "@/lib/format";
-import { ensureEntity, nextRef, useProducts, type Entity } from "@/hooks/useAppData";
-import { Trash2, Plus } from "lucide-react";
+import {
+  customerOutstanding,
+  ensureEntity,
+  nextRef,
+  useProducts,
+  useSettings,
+  type Entity,
+} from "@/hooks/useAppData";
+import { openWhatsApp } from "@/lib/whatsapp";
+import { invoiceText, printInvoicePdf, type InvoiceDoc } from "@/lib/invoiceDoc";
+import { Trash2, Plus, FileDown, Send } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/sales")({
   ssr: false,
@@ -54,6 +63,7 @@ const lineTotal = (l: Line) =>
 function SalesPage() {
   const qc = useQueryClient();
   const { data: products } = useProducts();
+  const { data: settings } = useSettings();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [picked, setPicked] = useState<Entity | null>(null);
@@ -81,6 +91,44 @@ function SalesPage() {
   const setLine = (i: number, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
 
+  const shareInvoice = async (inv: any, mode: "pdf" | "wa") => {
+    const { data: items, error } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", inv.id);
+    if (error) { toast.error(error.message); return; }
+    const doc: InvoiceDoc = {
+      invoice_no: inv.invoice_no,
+      customer_name: inv.customer_name,
+      customer_phone: inv.customer_phone,
+      invoice_date: inv.invoice_date,
+      payment_type: inv.payment_type,
+      total: inv.total,
+      paid: inv.paid,
+      discount: inv.discount,
+      notes: inv.notes,
+      items: (items ?? []).map((it) => ({
+        item_name: it.item_name,
+        quantity: it.quantity,
+        unit: it.unit,
+        unit_price: it.unit_price,
+        discount: it.discount,
+        line_total: it.line_total,
+      })),
+    };
+    const biz = {
+      business: settings?.business_name ?? "منشأتي",
+      currency: settings?.currency ?? "ريال",
+      phone: settings?.phone ?? null,
+      address: settings?.address ?? null,
+    };
+    if (mode === "pdf") {
+      if (!printInvoicePdf(doc, biz)) toast.error("فضلاً اسمح بالنوافذ المنبثقة لطباعة الفاتورة");
+    } else {
+      openWhatsApp(inv.customer_phone, invoiceText(doc, biz));
+    }
+  };
+
   const save = async () => {
     if (!customerName.trim()) { toast.error("أدخل اسم العميل"); return; }
     const valid = lines.filter((l) => l.item_name.trim() && num(l.quantity) > 0);
@@ -89,6 +137,26 @@ function SalesPage() {
     try {
       const paidAmount = paymentType === "نقدي" ? total : num(paid);
       const entityId = picked?.id ?? (await ensureEntity("customer", customerName, customerPhone));
+
+      // منع تجاوز سقف الدين للعميل
+      const newDebt = total - paidAmount;
+      if (entityId && newDebt > 0) {
+        const info = await customerOutstanding(entityId);
+        if (info.creditLimit > 0 && info.balance + newDebt > info.creditLimit) {
+          const currency = settings?.currency ?? "ريال";
+          const business = settings?.business_name ?? "منشأتي";
+          const msg =
+            `السلام عليكم ${info.name || customerName} 👋\n` +
+            `لقد وصلتم إلى الحد الأقصى المسموح به للدين (${money(info.creditLimit)} ${currency}).\n` +
+            `الرصيد الحالي عليكم: ${money(info.balance)} ${currency}.\n` +
+            `نرجو التكرم بسداد ما عليكم لإتمام عمليات الشراء الآجلة. شكراً لتعاملكم معنا - ${business}`;
+          toast.error("تم إيقاف البيع الآجل: العميل تجاوز سقف الدين");
+          openWhatsApp(info.phone || customerPhone, msg);
+          setSaving(false);
+          return;
+        }
+      }
+
       const { data: user } = await supabase.auth.getUser();
       const { data: inv, error } = await supabase
         .from("invoices")
@@ -306,6 +374,7 @@ function SalesPage() {
               <th className="p-2 text-right">التاريخ</th>
               <th className="p-2 text-right">الإجمالي</th>
               <th className="p-2 text-right">المتبقي</th>
+              <th className="p-2 text-right">إجراءات</th>
             </tr>
           </thead>
           <tbody>
@@ -316,6 +385,16 @@ function SalesPage() {
                 <td className="p-2">{dateOnly(i.invoice_date)}</td>
                 <td className="p-2">{money(i.total)}</td>
                 <td className="p-2">{money(Number(i.total) - Number(i.paid))}</td>
+                <td className="p-2">
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" onClick={() => shareInvoice(i, "pdf")}>
+                      <FileDown className="size-4" /> PDF
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => shareInvoice(i, "wa")}>
+                      <Send className="size-4" /> واتساب
+                    </Button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
