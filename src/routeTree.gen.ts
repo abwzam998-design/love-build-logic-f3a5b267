@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedExpensesRouteImport } from './routes/_authenticated/expenses'
+import { Route as AuthenticatedFollowupRouteImport } from './routes/_authenticated/followup'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedLedgerRouteImport } from './routes/_authenticated/ledger'
 import { Route as AuthenticatedPersonalRouteImport } from './routes/_authenticated/personal'
@@ -53,6 +54,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 const AuthenticatedExpensesRoute = AuthenticatedExpensesRouteImport.update({
   id: '/expenses',
   path: '/expenses',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFollowupRoute = AuthenticatedFollowupRouteImport.update({
+  id: '/followup',
+  path: '/followup',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/expenses': typeof AuthenticatedExpensesRoute
+  '/followup': typeof AuthenticatedFollowupRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/ledger': typeof AuthenticatedLedgerRoute
   '/personal': typeof AuthenticatedPersonalRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/expenses': typeof AuthenticatedExpensesRoute
+  '/followup': typeof AuthenticatedFollowupRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/ledger': typeof AuthenticatedLedgerRoute
   '/personal': typeof AuthenticatedPersonalRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/expenses': typeof AuthenticatedExpensesRoute
+  '/_authenticated/followup': typeof AuthenticatedFollowupRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/ledger': typeof AuthenticatedLedgerRoute
   '/_authenticated/personal': typeof AuthenticatedPersonalRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/expenses'
+    | '/followup'
     | '/inventory'
     | '/ledger'
     | '/personal'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/expenses'
+    | '/followup'
     | '/inventory'
     | '/ledger'
     | '/personal'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/expenses'
+    | '/_authenticated/followup'
     | '/_authenticated/inventory'
     | '/_authenticated/ledger'
     | '/_authenticated/personal'
@@ -263,6 +275,13 @@ declare module '@tanstack/react-router' {
       path: '/expenses'
       fullPath: '/expenses'
       preLoaderRoute: typeof AuthenticatedExpensesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/followup': {
+      id: '/_authenticated/followup'
+      path: '/followup'
+      fullPath: '/followup'
+      preLoaderRoute: typeof AuthenticatedFollowupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inventory': {
@@ -342,6 +361,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExpensesRoute: typeof AuthenticatedExpensesRoute
+  AuthenticatedFollowupRoute: typeof AuthenticatedFollowupRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedLedgerRoute: typeof AuthenticatedLedgerRoute
   AuthenticatedPersonalRoute: typeof AuthenticatedPersonalRoute
@@ -358,6 +378,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExpensesRoute: AuthenticatedExpensesRoute,
+  AuthenticatedFollowupRoute: AuthenticatedFollowupRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedLedgerRoute: AuthenticatedLedgerRoute,
   AuthenticatedPersonalRoute: AuthenticatedPersonalRoute,
