@@ -279,6 +279,7 @@ function SalesPage() {
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       qc.invalidateQueries({ queryKey: ["receipts"] });
       qc.invalidateQueries({ queryKey: ["entities"] });
+      qc.invalidateQueries({ queryKey: ["account-ledger"] });
     } catch (e: any) {
       toast.error(e?.message ?? "تعذر الحفظ");
     } finally {
@@ -287,7 +288,7 @@ function SalesPage() {
   };
 
   return (
-    <AppShell title="المبيعات" subtitle="فاتورة بيع جديدة">
+    <AppShell title="المبيعات" subtitle={editingId ? "تعديل فاتورة" : "فاتورة بيع جديدة"}>
       <div className="rounded-xl border bg-card p-4">
         <div className="grid gap-3 md:grid-cols-4">
           <div className="space-y-1.5">
