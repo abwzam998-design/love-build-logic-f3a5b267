@@ -12,8 +12,9 @@ import { MessageButtons } from "@/components/MessageButtons";
 import { money, dateTime, todayISO } from "@/lib/format";
 import { buildLedger, type LedgerRow } from "@/lib/ledger";
 import { entityKindLabel, useSettings, nextRef, type Entity } from "@/hooks/useAppData";
-import { buildMessage } from "@/lib/whatsapp";
-import { ArrowRight } from "lucide-react";
+import { buildMessage, openWhatsApp, openSMS } from "@/lib/whatsapp";
+import { printStatementPdf, statementText } from "@/lib/statementDoc";
+import { ArrowRight, FileDown, MessageCircle, MessageSquareText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
   ssr: false,
@@ -176,6 +177,31 @@ function AccountLedgerPage() {
     },
   );
 
+  const biz = {
+    business: settings?.business_name ?? "منشأتي",
+    currency: settings?.currency ?? "ريال",
+    phone: settings?.phone ?? null,
+    address: settings?.address ?? null,
+  };
+
+  const stInfo = {
+    name: entity?.name ?? "",
+    phone: entity?.phone ?? null,
+    kindLabel: entity ? entityKindLabel(entity.kind) : "",
+    rows,
+  };
+
+  const sendFullStatement = (mode: "pdf" | "wa" | "sms") => {
+    if (!entity) return;
+    if (mode === "pdf") {
+      if (!printStatementPdf(stInfo, biz)) toast.error("فضلاً اسمح بالنوافذ المنبثقة لطباعة الكشف");
+      return;
+    }
+    const text = statementText(stInfo, biz);
+    if (mode === "wa") openWhatsApp(entity.phone, text);
+    else openSMS(entity.phone, text);
+  };
+
   return (
     <AppShell
       title={entity ? `كشف حساب: ${entity.name}` : "كشف حساب"}
@@ -216,6 +242,19 @@ function AccountLedgerPage() {
           <MessageButtons phone={entity?.phone} message={statementMsg} />
           <Button onClick={addPayment} disabled={saving}>حفظ السند</Button>
         </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4">
+        <p className="me-auto text-sm font-bold">إرسال الكشف كامل بجميع الحركات</p>
+        <Button variant="outline" size="sm" onClick={() => sendFullStatement("wa")}>
+          <MessageCircle className="size-4" /> واتساب (كشف كامل)
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => sendFullStatement("sms")}>
+          <MessageSquareText className="size-4" /> رسالة نصية (كشف كامل)
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => sendFullStatement("pdf")}>
+          <FileDown className="size-4" /> PDF
+        </Button>
       </div>
 
       <h2 className="mt-6 mb-2 text-base font-bold">الحركات</h2>
