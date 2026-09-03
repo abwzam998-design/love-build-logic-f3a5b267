@@ -458,12 +458,18 @@ function SalesPage() {
                 <td className="p-2">{money(i.total)}</td>
                 <td className="p-2">{money(Number(i.total) - Number(i.paid))}</td>
                 <td className="p-2">
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1">
                     <Button size="sm" variant="outline" onClick={() => shareInvoice(i, "pdf")}>
                       <FileDown className="size-4" /> PDF
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => shareInvoice(i, "wa")}>
                       <Send className="size-4" /> واتساب
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => editInvoice(i)}>
+                      <Pencil className="size-4" /> تعديل
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => deleteInvoice(i)}>
+                      <Trash2 className="size-4" /> حذف
                     </Button>
                   </div>
                 </td>
