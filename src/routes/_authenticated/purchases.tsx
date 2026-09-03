@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { money, dateOnly, num, SALE_UNITS, PAYMENT_TYPES } from "@/lib/format";
 import { nextRef, useProducts } from "@/hooks/useAppData";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/purchases")({
   ssr: false,
@@ -158,7 +158,7 @@ function PurchasesPage() {
   };
 
   return (
-    <AppShell title="المشتريات والموردين" subtitle="فاتورة شراء جديدة">
+    <AppShell title="المشتريات والموردين" subtitle={editingId ? "تعديل فاتورة شراء" : "فاتورة شراء جديدة"}>
       <div className="rounded-xl border bg-card p-4">
         <div className="grid gap-3 md:grid-cols-4">
           <div className="space-y-1.5">
