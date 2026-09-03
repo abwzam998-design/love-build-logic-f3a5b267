@@ -92,6 +92,58 @@ function SalesPage() {
   const setLine = (i: number, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
 
+  const resetForm = () => {
+    setEditingId(null);
+    setCustomerName("");
+    setCustomerPhone("");
+    setPicked(null);
+    setPaid(0);
+    setPaymentType(PAYMENT_TYPES[0]!);
+    setLines([{ ...emptyLine }]);
+  };
+
+  const editInvoice = async (inv: any) => {
+    const { data: items, error } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", inv.id);
+    if (error) { toast.error(error.message); return; }
+    setEditingId(inv.id);
+    setCustomerName(inv.customer_name ?? "");
+    setCustomerPhone(inv.customer_phone ?? "");
+    setPicked(null);
+    setPaymentType(inv.payment_type ?? PAYMENT_TYPES[0]!);
+    setPaid(Number(inv.paid ?? 0));
+    setLines(
+      (items ?? []).length
+        ? (items ?? []).map((it) => ({
+            item_name: it.item_name,
+            quantity: Number(it.quantity),
+            unit: it.unit,
+            unit_price: Number(it.unit_price),
+            discount: Number(it.discount ?? 0),
+            sale_kind: it.sale_kind ?? SALE_KINDS[0]!,
+            product_id: it.product_id ?? null,
+          }))
+        : [{ ...emptyLine }],
+    );
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deleteInvoice = async (inv: any) => {
+    if (!window.confirm(`حذف الفاتورة ${inv.invoice_no}؟ سيتم حذف أصنافها وسنداتها.`)) return;
+    await supabase.from("payments").delete().eq("invoice_id", inv.id);
+    await supabase.from("invoice_items").delete().eq("invoice_id", inv.id);
+    const { error } = await supabase.from("invoices").delete().eq("id", inv.id);
+    if (error) { toast.error(error.message); return; }
+    if (editingId === inv.id) resetForm();
+    toast.success("تم حذف الفاتورة");
+    qc.invalidateQueries({ queryKey: ["invoices-recent"] });
+    qc.invalidateQueries({ queryKey: ["dashboard"] });
+    qc.invalidateQueries({ queryKey: ["receipts"] });
+    qc.invalidateQueries({ queryKey: ["account-ledger"] });
+  };
+
   const shareInvoice = async (inv: any, mode: "pdf" | "wa") => {
     const { data: items, error } = await supabase
       .from("invoice_items")
