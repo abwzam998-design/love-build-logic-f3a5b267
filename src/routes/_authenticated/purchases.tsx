@@ -37,6 +37,7 @@ function PurchasesPage() {
   const [paymentType, setPaymentType] = useState(PAYMENT_TYPES[0]!);
   const [paid, setPaid] = useState(0);
   const [lines, setLines] = useState<Line[]>([{ ...emptyLine }]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const total = lines.reduce((a, l) => a + num(l.quantity) * num(l.unit_cost), 0);
 
