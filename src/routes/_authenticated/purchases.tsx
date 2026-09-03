@@ -255,7 +255,14 @@ function PurchasesPage() {
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
           <p className="text-lg font-bold">الإجمالي: {money(total)}</p>
-          <Button onClick={save}>حفظ الفاتورة</Button>
+          <div className="flex gap-2">
+            {editingId && (
+              <Button variant="outline" onClick={resetForm}>
+                <X className="size-4" /> إلغاء التعديل
+              </Button>
+            )}
+            <Button onClick={save}>{editingId ? "حفظ التعديل" : "حفظ الفاتورة"}</Button>
+          </div>
         </div>
       </div>
 
@@ -269,6 +276,7 @@ function PurchasesPage() {
               <th className="p-2 text-right">التاريخ</th>
               <th className="p-2 text-right">الإجمالي</th>
               <th className="p-2 text-right">المتبقي</th>
+              <th className="p-2 text-right">إجراءات</th>
             </tr>
           </thead>
           <tbody>
@@ -279,6 +287,16 @@ function PurchasesPage() {
                 <td className="p-2">{dateOnly(p.purchase_date)}</td>
                 <td className="p-2">{money(p.total)}</td>
                 <td className="p-2">{money(Number(p.total) - Number(p.paid))}</td>
+                <td className="p-2">
+                  <div className="flex flex-wrap gap-1">
+                    <Button size="sm" variant="outline" onClick={() => editPurchase(p)}>
+                      <Pencil className="size-4" /> تعديل
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => deletePurchase(p)}>
+                      <Trash2 className="size-4" /> حذف
+                    </Button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
