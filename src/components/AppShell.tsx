@@ -13,6 +13,7 @@ import {
   Menu,
   LogOut,
   ShieldCheck,
+  Users,
 
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +29,7 @@ const NAV = [
   { to: "/sales", label: "المبيعات", icon: ShoppingCart, manager: false },
   { to: "/ledger", label: "الإجماليات والديون", icon: Receipt, manager: false },
   { to: "/accounts", label: "الحسابات", icon: UserCog, manager: false },
+  { to: "/followup", label: "متابعة العملاء", icon: Users, manager: false },
   { to: "/receipts", label: "السندات", icon: Receipt, manager: false },
   { to: "/purchases", label: "المشتريات والموردين", icon: Truck, manager: false },
   { to: "/inventory", label: "المخزون والهالك", icon: Boxes, manager: true },

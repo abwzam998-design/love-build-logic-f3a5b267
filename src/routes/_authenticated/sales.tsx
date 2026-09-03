@@ -20,7 +20,7 @@ import {
 } from "@/hooks/useAppData";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { invoiceText, printInvoicePdf, type InvoiceDoc } from "@/lib/invoiceDoc";
-import { Trash2, Plus, FileDown, Send } from "lucide-react";
+import { Trash2, Plus, FileDown, Send, Pencil, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/sales")({
   ssr: false,
@@ -71,6 +71,7 @@ function SalesPage() {
   const [paid, setPaid] = useState(0);
   const [lines, setLines] = useState<Line[]>([{ ...emptyLine }]);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const total = lines.reduce((a, l) => a + lineTotal(l), 0);
   const totalDiscount = lines.reduce((a, l) => a + num(l.discount), 0);
@@ -90,6 +91,58 @@ function SalesPage() {
 
   const setLine = (i: number, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+
+  const resetForm = () => {
+    setEditingId(null);
+    setCustomerName("");
+    setCustomerPhone("");
+    setPicked(null);
+    setPaid(0);
+    setPaymentType(PAYMENT_TYPES[0]!);
+    setLines([{ ...emptyLine }]);
+  };
+
+  const editInvoice = async (inv: any) => {
+    const { data: items, error } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", inv.id);
+    if (error) { toast.error(error.message); return; }
+    setEditingId(inv.id);
+    setCustomerName(inv.customer_name ?? "");
+    setCustomerPhone(inv.customer_phone ?? "");
+    setPicked(null);
+    setPaymentType(inv.payment_type ?? PAYMENT_TYPES[0]!);
+    setPaid(Number(inv.paid ?? 0));
+    setLines(
+      (items ?? []).length
+        ? (items ?? []).map((it) => ({
+            item_name: it.item_name,
+            quantity: Number(it.quantity),
+            unit: it.unit,
+            unit_price: Number(it.unit_price),
+            discount: Number(it.discount ?? 0),
+            sale_kind: it.sale_kind ?? SALE_KINDS[0]!,
+            product_id: it.product_id ?? null,
+          }))
+        : [{ ...emptyLine }],
+    );
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deleteInvoice = async (inv: any) => {
+    if (!window.confirm(`حذف الفاتورة ${inv.invoice_no}؟ سيتم حذف أصنافها وسنداتها.`)) return;
+    await supabase.from("payments").delete().eq("invoice_id", inv.id);
+    await supabase.from("invoice_items").delete().eq("invoice_id", inv.id);
+    const { error } = await supabase.from("invoices").delete().eq("id", inv.id);
+    if (error) { toast.error(error.message); return; }
+    if (editingId === inv.id) resetForm();
+    toast.success("تم حذف الفاتورة");
+    qc.invalidateQueries({ queryKey: ["invoices-recent"] });
+    qc.invalidateQueries({ queryKey: ["dashboard"] });
+    qc.invalidateQueries({ queryKey: ["receipts"] });
+    qc.invalidateQueries({ queryKey: ["account-ledger"] });
+  };
 
   const shareInvoice = async (inv: any, mode: "pdf" | "wa") => {
     const { data: items, error } = await supabase
@@ -140,7 +193,7 @@ function SalesPage() {
 
       // منع تجاوز سقف الدين للعميل
       const newDebt = total - paidAmount;
-      if (entityId && newDebt > 0) {
+      if (!editingId && entityId && newDebt > 0) {
         const info = await customerOutstanding(entityId);
         if (info.creditLimit > 0 && info.balance + newDebt > info.creditLimit) {
           const currency = settings?.currency ?? "ريال";
@@ -158,23 +211,38 @@ function SalesPage() {
       }
 
       const { data: user } = await supabase.auth.getUser();
-      const { data: inv, error } = await supabase
-        .from("invoices")
-        .insert({
-          invoice_no: nextRef("INV"),
-          customer_name: customerName.trim(),
-          customer_phone: customerPhone.trim() || null,
-          entity_id: entityId,
-          payment_type: paymentType,
-          sale_type: valid[0]!.sale_kind,
-          total,
-          paid: paidAmount,
-          discount: totalDiscount,
-          created_by: user.user?.id ?? null,
-        })
-        .select()
-        .single();
-      if (error || !inv) throw error ?? new Error("تعذر الحفظ");
+      const payload = {
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim() || null,
+        entity_id: entityId,
+        payment_type: paymentType,
+        sale_type: valid[0]!.sale_kind,
+        total,
+        paid: paidAmount,
+        discount: totalDiscount,
+      };
+
+      let inv: any;
+      if (editingId) {
+        const { data, error } = await supabase
+          .from("invoices")
+          .update(payload)
+          .eq("id", editingId)
+          .select()
+          .single();
+        if (error || !data) throw error ?? new Error("تعذر التعديل");
+        inv = data;
+        await supabase.from("invoice_items").delete().eq("invoice_id", editingId);
+        await supabase.from("payments").delete().eq("invoice_id", editingId);
+      } else {
+        const { data, error } = await supabase
+          .from("invoices")
+          .insert({ ...payload, invoice_no: nextRef("INV"), created_by: user.user?.id ?? null })
+          .select()
+          .single();
+        if (error || !data) throw error ?? new Error("تعذر الحفظ");
+        inv = data;
+      }
 
       const { error: itemsError } = await supabase.from("invoice_items").insert(
         valid.map((l) => ({
@@ -205,16 +273,13 @@ function SalesPage() {
         });
       }
 
-      toast.success("تم حفظ الفاتورة");
-      setCustomerName("");
-      setCustomerPhone("");
-      setPicked(null);
-      setPaid(0);
-      setLines([{ ...emptyLine }]);
+      toast.success(editingId ? "تم تعديل الفاتورة" : "تم حفظ الفاتورة");
+      resetForm();
       qc.invalidateQueries({ queryKey: ["invoices-recent"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       qc.invalidateQueries({ queryKey: ["receipts"] });
       qc.invalidateQueries({ queryKey: ["entities"] });
+      qc.invalidateQueries({ queryKey: ["account-ledger"] });
     } catch (e: any) {
       toast.error(e?.message ?? "تعذر الحفظ");
     } finally {
@@ -223,7 +288,7 @@ function SalesPage() {
   };
 
   return (
-    <AppShell title="المبيعات" subtitle="فاتورة بيع جديدة">
+    <AppShell title="المبيعات" subtitle={editingId ? "تعديل فاتورة" : "فاتورة بيع جديدة"}>
       <div className="rounded-xl border bg-card p-4">
         <div className="grid gap-3 md:grid-cols-4">
           <div className="space-y-1.5">
@@ -358,9 +423,16 @@ function SalesPage() {
               {money(total - (paymentType === "نقدي" ? total : num(paid)))}
             </p>
           </div>
-          <Button onClick={save} disabled={saving}>
-            حفظ الفاتورة
-          </Button>
+          <div className="flex gap-2">
+            {editingId && (
+              <Button variant="outline" onClick={resetForm}>
+                <X className="size-4" /> إلغاء التعديل
+              </Button>
+            )}
+            <Button onClick={save} disabled={saving}>
+              {editingId ? "حفظ التعديل" : "حفظ الفاتورة"}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -386,12 +458,18 @@ function SalesPage() {
                 <td className="p-2">{money(i.total)}</td>
                 <td className="p-2">{money(Number(i.total) - Number(i.paid))}</td>
                 <td className="p-2">
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1">
                     <Button size="sm" variant="outline" onClick={() => shareInvoice(i, "pdf")}>
                       <FileDown className="size-4" /> PDF
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => shareInvoice(i, "wa")}>
                       <Send className="size-4" /> واتساب
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => editInvoice(i)}>
+                      <Pencil className="size-4" /> تعديل
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => deleteInvoice(i)}>
+                      <Trash2 className="size-4" /> حذف
                     </Button>
                   </div>
                 </td>

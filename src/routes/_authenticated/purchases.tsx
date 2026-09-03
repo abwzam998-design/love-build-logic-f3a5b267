@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { money, dateOnly, num, SALE_UNITS, PAYMENT_TYPES } from "@/lib/format";
 import { nextRef, useProducts } from "@/hooks/useAppData";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/purchases")({
   ssr: false,
@@ -37,6 +37,7 @@ function PurchasesPage() {
   const [paymentType, setPaymentType] = useState(PAYMENT_TYPES[0]!);
   const [paid, setPaid] = useState(0);
   const [lines, setLines] = useState<Line[]>([{ ...emptyLine }]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const total = lines.reduce((a, l) => a + num(l.quantity) * num(l.unit_cost), 0);
 
@@ -56,25 +57,87 @@ function PurchasesPage() {
   const setLine = (i: number, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
 
+  const resetForm = () => {
+    setEditingId(null);
+    setSupplierName("");
+    setSupplierPhone("");
+    setPaymentType(PAYMENT_TYPES[0]!);
+    setPaid(0);
+    setLines([{ ...emptyLine }]);
+  };
+
+  const editPurchase = async (p: any) => {
+    const { data: items, error } = await supabase
+      .from("purchase_items")
+      .select("*")
+      .eq("purchase_id", p.id);
+    if (error) { toast.error(error.message); return; }
+    setEditingId(p.id);
+    setSupplierName(p.supplier_name ?? "");
+    setSupplierPhone(p.supplier_phone ?? "");
+    setPaymentType(p.payment_type ?? PAYMENT_TYPES[0]!);
+    setPaid(Number(p.paid ?? 0));
+    setLines(
+      (items ?? []).length
+        ? (items ?? []).map((it) => ({
+            item_name: it.item_name,
+            quantity: Number(it.quantity),
+            unit: it.unit,
+            unit_cost: Number(it.unit_cost),
+            product_id: it.product_id ?? null,
+          }))
+        : [{ ...emptyLine }],
+    );
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deletePurchase = async (p: any) => {
+    if (!window.confirm(`حذف فاتورة الشراء ${p.purchase_no}؟`)) return;
+    await supabase.from("payments").delete().eq("purchase_id", p.id);
+    await supabase.from("purchase_items").delete().eq("purchase_id", p.id);
+    const { error } = await supabase.from("purchases").delete().eq("id", p.id);
+    if (error) { toast.error(error.message); return; }
+    if (editingId === p.id) resetForm();
+    toast.success("تم حذف الفاتورة");
+    qc.invalidateQueries({ queryKey: ["purchases-recent"] });
+    qc.invalidateQueries({ queryKey: ["dashboard"] });
+    qc.invalidateQueries({ queryKey: ["account-ledger"] });
+  };
+
   const save = async () => {
     if (!supplierName.trim()) { toast.error("أدخل اسم المورد"); return; }
     const valid = lines.filter((l) => l.item_name.trim() && num(l.quantity) > 0);
     if (!valid.length) { toast.error("أضف صنفاً واحداً على الأقل"); return; }
     const { data: user } = await supabase.auth.getUser();
-    const { data: pur, error } = await supabase
-      .from("purchases")
-      .insert({
-        purchase_no: nextRef("PUR"),
-        supplier_name: supplierName.trim(),
-        supplier_phone: supplierPhone.trim() || null,
-        payment_type: paymentType,
-        total,
-        paid: paymentType === "نقدي" ? total : num(paid),
-        created_by: user.user?.id ?? null,
-      })
-      .select()
-      .single();
-    if (error || !pur) { toast.error(error?.message ?? "تعذر الحفظ"); return; }
+    const payload = {
+      supplier_name: supplierName.trim(),
+      supplier_phone: supplierPhone.trim() || null,
+      payment_type: paymentType,
+      total,
+      paid: paymentType === "نقدي" ? total : num(paid),
+    };
+
+    let pur: any;
+    if (editingId) {
+      const { data, error } = await supabase
+        .from("purchases")
+        .update(payload)
+        .eq("id", editingId)
+        .select()
+        .single();
+      if (error || !data) { toast.error(error?.message ?? "تعذر التعديل"); return; }
+      pur = data;
+      await supabase.from("purchase_items").delete().eq("purchase_id", editingId);
+    } else {
+      const { data, error } = await supabase
+        .from("purchases")
+        .insert({ ...payload, purchase_no: nextRef("PUR"), created_by: user.user?.id ?? null })
+        .select()
+        .single();
+      if (error || !data) { toast.error(error?.message ?? "تعذر الحفظ"); return; }
+      pur = data;
+    }
+
     const { error: itemsError } = await supabase.from("purchase_items").insert(
       valid.map((l) => ({
         purchase_id: pur.id,
@@ -87,17 +150,15 @@ function PurchasesPage() {
       })),
     );
     if (itemsError) { toast.error(itemsError.message); return; }
-    toast.success("تم حفظ فاتورة الشراء");
-    setSupplierName("");
-    setSupplierPhone("");
-    setPaid(0);
-    setLines([{ ...emptyLine }]);
+    toast.success(editingId ? "تم تعديل فاتورة الشراء" : "تم حفظ فاتورة الشراء");
+    resetForm();
     qc.invalidateQueries({ queryKey: ["purchases-recent"] });
     qc.invalidateQueries({ queryKey: ["dashboard"] });
+    qc.invalidateQueries({ queryKey: ["account-ledger"] });
   };
 
   return (
-    <AppShell title="المشتريات والموردين" subtitle="فاتورة شراء جديدة">
+    <AppShell title="المشتريات والموردين" subtitle={editingId ? "تعديل فاتورة شراء" : "فاتورة شراء جديدة"}>
       <div className="rounded-xl border bg-card p-4">
         <div className="grid gap-3 md:grid-cols-4">
           <div className="space-y-1.5">
@@ -194,7 +255,14 @@ function PurchasesPage() {
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
           <p className="text-lg font-bold">الإجمالي: {money(total)}</p>
-          <Button onClick={save}>حفظ الفاتورة</Button>
+          <div className="flex gap-2">
+            {editingId && (
+              <Button variant="outline" onClick={resetForm}>
+                <X className="size-4" /> إلغاء التعديل
+              </Button>
+            )}
+            <Button onClick={save}>{editingId ? "حفظ التعديل" : "حفظ الفاتورة"}</Button>
+          </div>
         </div>
       </div>
 
@@ -208,6 +276,7 @@ function PurchasesPage() {
               <th className="p-2 text-right">التاريخ</th>
               <th className="p-2 text-right">الإجمالي</th>
               <th className="p-2 text-right">المتبقي</th>
+              <th className="p-2 text-right">إجراءات</th>
             </tr>
           </thead>
           <tbody>
@@ -218,6 +287,16 @@ function PurchasesPage() {
                 <td className="p-2">{dateOnly(p.purchase_date)}</td>
                 <td className="p-2">{money(p.total)}</td>
                 <td className="p-2">{money(Number(p.total) - Number(p.paid))}</td>
+                <td className="p-2">
+                  <div className="flex flex-wrap gap-1">
+                    <Button size="sm" variant="outline" onClick={() => editPurchase(p)}>
+                      <Pencil className="size-4" /> تعديل
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => deletePurchase(p)}>
+                      <Trash2 className="size-4" /> حذف
+                    </Button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
