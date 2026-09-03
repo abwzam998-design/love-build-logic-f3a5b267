@@ -193,7 +193,7 @@ function SalesPage() {
 
       // منع تجاوز سقف الدين للعميل
       const newDebt = total - paidAmount;
-      if (entityId && newDebt > 0) {
+      if (!editingId && entityId && newDebt > 0) {
         const info = await customerOutstanding(entityId);
         if (info.creditLimit > 0 && info.balance + newDebt > info.creditLimit) {
           const currency = settings?.currency ?? "ريال";
@@ -211,23 +211,38 @@ function SalesPage() {
       }
 
       const { data: user } = await supabase.auth.getUser();
-      const { data: inv, error } = await supabase
-        .from("invoices")
-        .insert({
-          invoice_no: nextRef("INV"),
-          customer_name: customerName.trim(),
-          customer_phone: customerPhone.trim() || null,
-          entity_id: entityId,
-          payment_type: paymentType,
-          sale_type: valid[0]!.sale_kind,
-          total,
-          paid: paidAmount,
-          discount: totalDiscount,
-          created_by: user.user?.id ?? null,
-        })
-        .select()
-        .single();
-      if (error || !inv) throw error ?? new Error("تعذر الحفظ");
+      const payload = {
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim() || null,
+        entity_id: entityId,
+        payment_type: paymentType,
+        sale_type: valid[0]!.sale_kind,
+        total,
+        paid: paidAmount,
+        discount: totalDiscount,
+      };
+
+      let inv: any;
+      if (editingId) {
+        const { data, error } = await supabase
+          .from("invoices")
+          .update(payload)
+          .eq("id", editingId)
+          .select()
+          .single();
+        if (error || !data) throw error ?? new Error("تعذر التعديل");
+        inv = data;
+        await supabase.from("invoice_items").delete().eq("invoice_id", editingId);
+        await supabase.from("payments").delete().eq("invoice_id", editingId);
+      } else {
+        const { data, error } = await supabase
+          .from("invoices")
+          .insert({ ...payload, invoice_no: nextRef("INV"), created_by: user.user?.id ?? null })
+          .select()
+          .single();
+        if (error || !data) throw error ?? new Error("تعذر الحفظ");
+        inv = data;
+      }
 
       const { error: itemsError } = await supabase.from("invoice_items").insert(
         valid.map((l) => ({
@@ -258,12 +273,8 @@ function SalesPage() {
         });
       }
 
-      toast.success("تم حفظ الفاتورة");
-      setCustomerName("");
-      setCustomerPhone("");
-      setPicked(null);
-      setPaid(0);
-      setLines([{ ...emptyLine }]);
+      toast.success(editingId ? "تم تعديل الفاتورة" : "تم حفظ الفاتورة");
+      resetForm();
       qc.invalidateQueries({ queryKey: ["invoices-recent"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       qc.invalidateQueries({ queryKey: ["receipts"] });
