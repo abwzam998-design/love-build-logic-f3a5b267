@@ -71,6 +71,7 @@ function SalesPage() {
   const [paid, setPaid] = useState(0);
   const [lines, setLines] = useState<Line[]>([{ ...emptyLine }]);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const total = lines.reduce((a, l) => a + lineTotal(l), 0);
   const totalDiscount = lines.reduce((a, l) => a + num(l.discount), 0);
