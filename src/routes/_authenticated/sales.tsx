@@ -423,9 +423,16 @@ function SalesPage() {
               {money(total - (paymentType === "نقدي" ? total : num(paid)))}
             </p>
           </div>
-          <Button onClick={save} disabled={saving}>
-            حفظ الفاتورة
-          </Button>
+          <div className="flex gap-2">
+            {editingId && (
+              <Button variant="outline" onClick={resetForm}>
+                <X className="size-4" /> إلغاء التعديل
+              </Button>
+            )}
+            <Button onClick={save} disabled={saving}>
+              {editingId ? "حفظ التعديل" : "حفظ الفاتورة"}
+            </Button>
+          </div>
         </div>
       </div>
 
