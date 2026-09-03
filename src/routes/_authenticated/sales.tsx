@@ -20,7 +20,7 @@ import {
 } from "@/hooks/useAppData";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { invoiceText, printInvoicePdf, type InvoiceDoc } from "@/lib/invoiceDoc";
-import { Trash2, Plus, FileDown, Send } from "lucide-react";
+import { Trash2, Plus, FileDown, Send, Pencil, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/sales")({
   ssr: false,
