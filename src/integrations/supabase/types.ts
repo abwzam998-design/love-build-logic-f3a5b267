@@ -409,28 +409,42 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          entity_id: string | null
           full_name: string | null
           id: string
           is_active: boolean
+          is_approved: boolean
           phone: string | null
         }
         Insert: {
           created_at?: string
           email?: string | null
+          entity_id?: string | null
           full_name?: string | null
           id: string
           is_active?: boolean
+          is_approved?: boolean
           phone?: string | null
         }
         Update: {
           created_at?: string
           email?: string | null
+          entity_id?: string | null
           full_name?: string | null
           id?: string
           is_active?: boolean
+          is_approved?: boolean
           phone?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchase_items: {
         Row: {
@@ -744,9 +758,10 @@ export type Database = {
       }
       is_staff: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      my_entity_id: { Args: never; Returns: string }
     }
     Enums: {
-      app_role: "manager" | "seller"
+      app_role: "manager" | "seller" | "customer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -874,7 +889,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["manager", "seller"],
+      app_role: ["manager", "seller", "customer"],
     },
   },
 } as const

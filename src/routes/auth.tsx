@@ -2,13 +2,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import logo from "@/assets/moath-soft-logo.png";
+import { loginIdentifierToEmail, phoneToEmail, phoneDigits, randomPassword } from "@/lib/phoneAuth";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -17,12 +17,12 @@ export const Route = createFileRoute("/auth")({
       { title: "تسجيل الدخول | نظام إدارة المبيعات والمخزون" },
       {
         name: "description",
-        content: "سجّل الدخول لإدارة المبيعات والمشتريات والديون والمخزون ومتابعة الأرباح يومياً.",
+        content: "سجّل الدخول برقم جوالك وكلمة المرور لإدارة المبيعات والديون والمخزون.",
       },
       { property: "og:title", content: "تسجيل الدخول | نظام إدارة المبيعات والمخزون" },
       {
         property: "og:description",
-        content: "نظام متكامل لإدارة فواتير الجملة والتجزئة والديون ورسائل المطالبة عبر واتساب.",
+        content: "دخول برقم الجوال وكلمة مرور يحددها المدير، مع مراجعة طلبات التسجيل.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -33,15 +33,12 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [accountType, setAccountType] = useState<"manager" | "seller">("seller");
+  const [signupPhone, setSignupPhone] = useState("");
   const [loading, setLoading] = useState(false);
-  const [reset, setReset] = useState<null | "request" | "verify" | "password">(null);
-  const [otp, setOtp] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -52,71 +49,62 @@ function AuthPage() {
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const email = loginIdentifierToEmail(identifier);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setLoading(false);
+      toast.error("كلمة المرور أو رقم الجوال غير صحيح. تأكد من الرمز المُسلّم لك من الإدارة.");
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_approved, is_active")
+      .eq("id", data.user!.id)
+      .maybeSingle();
+    const p = profile as { is_approved?: boolean; is_active?: boolean } | null;
+    if (p && (p.is_approved === false || p.is_active === false)) {
+      await supabase.auth.signOut();
+      setLoading(false);
+      toast.error("حسابك قيد الانتظار أو تم إيقافه من قبل الإدارة. لا يمكنك الدخول إلا بموافقة المدير.");
+      return;
+    }
+
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user!.id);
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    navigate({ to: "/dashboard" });
+    const list = (roles ?? []).map((r) => r.role as string);
+    if (list.includes("manager") || list.includes("seller")) navigate({ to: "/dashboard" });
+    else navigate({ to: "/my-account" });
   };
 
   const signUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (phoneDigits(signupPhone).length < 7) {
+      toast.error("أدخل رقم جوال صحيح");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { full_name: fullName, phone, role: accountType },
-      },
+      email: phoneToEmail(signupPhone),
+      password: randomPassword(),
+      options: { data: { full_name: fullName.trim(), phone: signupPhone.trim() } },
     });
+    await supabase.auth.signOut();
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("تم إنشاء الحساب، يمكنك الدخول الآن");
-    navigate({ to: "/dashboard" });
+    if (error) {
+      toast.error(
+        error.message.toLowerCase().includes("already")
+          ? "هذا الرقم مسجل مسبقاً"
+          : "تعذر إرسال الطلب، حاول مرة أخرى",
+      );
+      return;
+    }
+    setSent(true);
+    toast.success("تم إرسال طلب تسجيلك بنجاح");
   };
-
-  const sendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false },
-    });
-    setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("تم إرسال رمز التحقق إلى بريدك");
-    setReset("verify");
-  };
-
-  const verifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({ email, token: otp.trim(), type: "email" });
-    setLoading(false);
-    if (error) { toast.error("رمز غير صحيح أو منتهي"); return; }
-    setReset("password");
-  };
-
-  const savePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("تم تحديث كلمة المرور");
-    navigate({ to: "/dashboard" });
-  };
-
-  const google = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) { toast.error("تعذر تسجيل الدخول عبر جوجل"); return; }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard" });
-  };
-
-
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-sidebar px-4 py-10">
@@ -139,138 +127,87 @@ function AuthPage() {
           </p>
         </div>
 
-
-        {reset ? (
-          <div className="space-y-3">
-            {reset === "request" && (
-              <form onSubmit={sendOtp} className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="reset-email">البريد الإلكتروني للحساب</Label>
-                  <Input id="reset-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  إرسال رمز التحقق
-                </Button>
-              </form>
-            )}
-            {reset === "verify" && (
-              <form onSubmit={verifyOtp} className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="otp">رمز التحقق المُرسل إلى {email}</Label>
-                  <Input id="otp" inputMode="numeric" required value={otp} onChange={(e) => setOtp(e.target.value)} />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  تأكيد الرمز
-                </Button>
-              </form>
-            )}
-            {reset === "password" && (
-              <form onSubmit={savePassword} className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="newpass">كلمة المرور الجديدة</Label>
-                  <Input id="newpass" type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  حفظ كلمة المرور
-                </Button>
-              </form>
-            )}
-            <Button variant="ghost" className="w-full" onClick={() => setReset(null)}>
-              العودة لتسجيل الدخول
-            </Button>
-          </div>
-        ) : (
         <Tabs defaultValue="login">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">دخول</TabsTrigger>
-            <TabsTrigger value="signup">حساب جديد</TabsTrigger>
+            <TabsTrigger value="signup">طلب حساب جديد</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
             <form onSubmit={signIn} className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="email">البريد الإلكتروني</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Label htmlFor="identifier">رقم الجوال</Label>
+                <Input
+                  id="identifier"
+                  inputMode="tel"
+                  required
+                  placeholder="مثال: 7XXXXXXXX"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="password">كلمة المرور</Label>
-                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                <Label htmlFor="password">كلمة المرور / رمز الدخول</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 تسجيل الدخول
               </Button>
-              <button
-                type="button"
-                onClick={() => setReset("request")}
-                className="block w-full text-center text-xs font-medium text-primary underline-offset-4 hover:underline"
-              >
-                نسيت كلمة المرور؟
-              </button>
+              <p className="text-center text-xs text-muted-foreground">
+                كلمة المرور يحددها لك مدير النظام وتصلك عبر واتساب أو رسالة نصية.
+              </p>
             </form>
           </TabsContent>
 
           <TabsContent value="signup">
-            <form onSubmit={signUp} className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="name">الاسم الكامل</Label>
-                <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            {sent ? (
+              <div className="space-y-3 rounded-2xl border bg-secondary/40 p-4 text-center">
+                <p className="text-sm font-bold text-primary">تم إرسال طلب تسجيلك بنجاح</p>
+                <p className="text-sm text-muted-foreground">
+                  سيتم مراجعة طلبك من قبل الإدارة وإرسال كلمة السر / رمز التفعيل إلى رقم هاتفك فور
+                  الموافقة.
+                </p>
+                <Button variant="outline" className="w-full" onClick={() => setSent(false)}>
+                  إرسال طلب آخر
+                </Button>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="email2">البريد الإلكتروني</Label>
-                <Input id="email2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="phone">رقم الجوال</Label>
-                <Input id="phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="password2">كلمة المرور</Label>
-                <Input id="password2" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>نوع الحساب</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {([
-                    { v: "manager", t: "مدير", d: "كل الصلاحيات" },
-                    { v: "seller", t: "كاشير", d: "المبيعات فقط" },
-                  ] as const).map((o) => (
-                    <button
-                      key={o.v}
-                      type="button"
-                      onClick={() => setAccountType(o.v)}
-                      className={
-                        "rounded-lg border p-2.5 text-right transition-colors " +
-                        (accountType === o.v
-                          ? "border-primary bg-primary/10"
-                          : "hover:bg-accent")
-                      }
-                    >
-                      <span className="block text-sm font-semibold">{o.t}</span>
-                      <span className="block text-xs text-muted-foreground">{o.d}</span>
-                    </button>
-                  ))}
+            ) : (
+              <form onSubmit={signUp} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name">الاسم الكامل</Label>
+                  <Input
+                    id="name"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
                 </div>
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                إنشاء الحساب
-              </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                حساب المدير يصل للأرباح والأسعار والمصروفات، والكاشير للمبيعات فقط
-              </p>
-
-            </form>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">رقم الجوال</Label>
+                  <Input
+                    id="phone"
+                    inputMode="tel"
+                    required
+                    value={signupPhone}
+                    onChange={(e) => setSignupPhone(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  إرسال طلب التسجيل
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  لا حاجة لاختيار نوع الحساب، الإدارة تحدده عند الموافقة.
+                </p>
+              </form>
+            )}
           </TabsContent>
         </Tabs>
-        )}
-
-
-        <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> أو <span className="h-px flex-1 bg-border" />
-        </div>
-        <Button variant="outline" className="w-full" onClick={google}>
-          المتابعة عبر حساب جوجل
-        </Button>
       </div>
     </div>
   );
