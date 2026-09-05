@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Users,
   Crown,
-
+  User,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/moath-soft-logo.png";
@@ -24,6 +24,13 @@ import { useRole, useSettings, useMyProfile, useIsSuperAdmin, useIsOwner } from 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const NAV = [
   { to: "/dashboard", label: "لوحة اليوم", icon: LayoutDashboard, manager: false },
