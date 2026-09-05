@@ -128,7 +128,7 @@ export const ownerSetAccess = createServerFn({ method: "POST" })
     if (typeof data.approved === "boolean") update["is_approved"] = data.approved;
     if (typeof data.active === "boolean") update["is_active"] = data.active;
     if (typeof data.note === "string") update["owner_note"] = data.note;
-    const { error } = await supabaseAdmin.from("profiles").update(update).eq("id", data.userId);
+    const { error } = await supabaseAdmin.from("profiles").update(update as never).eq("id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -158,7 +158,7 @@ export const ownerSetSubscription = createServerFn({ method: "POST" })
     } else {
       update["is_active"] = false;
     }
-    const { error } = await supabaseAdmin.from("profiles").update(update).eq("id", data.userId);
+    const { error } = await supabaseAdmin.from("profiles").update(update as never).eq("id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
