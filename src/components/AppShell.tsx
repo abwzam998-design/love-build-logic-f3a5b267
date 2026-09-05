@@ -42,6 +42,7 @@ const NAV = [
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { isManager } = useRole();
   const isSuperAdmin = useIsSuperAdmin();
+  const isOwner = useIsOwner();
   const linkClass =
     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/75 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-[-2px]";
   const activeProps = {
@@ -62,15 +63,22 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           {n.label}
         </Link>
       ))}
-      {isSuperAdmin && (
+      {(isManager || isSuperAdmin) && (
         <Link to="/admin" onClick={onNavigate} className={linkClass} activeProps={activeProps}>
           <ShieldCheck className="size-4 shrink-0" />
-          إدارة الاشتراكات
+          إدارة المستخدمين
+        </Link>
+      )}
+      {isOwner && (
+        <Link to="/owner" onClick={onNavigate} className={linkClass} activeProps={activeProps}>
+          <Crown className="size-4 shrink-0" />
+          لوحة مالك المنصة
         </Link>
       )}
     </nav>
   );
 }
+
 
 
 export function AppShell({
