@@ -39,6 +39,7 @@ function AuthPage() {
   const [signupPhone, setSignupPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -46,11 +47,9 @@ function AuthPage() {
     });
   }, [navigate]);
 
-  const signIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doLogin = async (email: string, pass: string) => {
     setLoading(true);
-    const email = loginIdentifierToEmail(identifier);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
     if (error) {
       setLoading(false);
       toast.error("كلمة المرور أو رقم الجوال غير صحيح. تأكد من الرمز المُسلّم لك من الإدارة.");
@@ -80,6 +79,17 @@ function AuthPage() {
     else if (list.includes("manager") || list.includes("seller")) navigate({ to: "/dashboard" });
     else navigate({ to: "/my-account" });
   };
+
+  const signIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await doLogin(loginIdentifierToEmail(identifier), password);
+  };
+
+  const submitCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await doLogin(phoneToEmail(signupPhone), code);
+  };
+
 
   const signUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,16 +178,36 @@ function AuthPage() {
 
           <TabsContent value="signup">
             {sent ? (
-              <div className="space-y-3 rounded-2xl border bg-secondary/40 p-4 text-center">
-                <p className="text-sm font-bold text-primary">تم إرسال طلب تسجيلك بنجاح</p>
-                <p className="text-sm text-muted-foreground">
-                  سيتم مراجعة طلبك من قبل الإدارة وإرسال كلمة السر / رمز التفعيل إلى رقم هاتفك فور
-                  الموافقة.
-                </p>
-                <Button variant="outline" className="w-full" onClick={() => setSent(false)}>
+              <form onSubmit={submitCode} className="space-y-3 rounded-2xl border bg-secondary/40 p-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="code">أدخل رمز الدخول / كلمة المرور المرسلة إليك</Label>
+                  <Input
+                    id="code"
+                    type="password"
+                    required
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    تم إرسال طلبك بنجاح إلى المالك، يرجى إدخال كلمة المرور الموفرة لك عبر الواتساب
+                    أو SMS للدخول
+                  </p>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  دخول
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setCode("");
+                    setSent(false);
+                  }}
+                >
                   إرسال طلب آخر
                 </Button>
-              </div>
+              </form>
             ) : (
               <form onSubmit={signUp} className="space-y-3">
                 <div className="space-y-1.5">
