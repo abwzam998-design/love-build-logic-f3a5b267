@@ -39,6 +39,7 @@ function AuthPage() {
   const [signupPhone, setSignupPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
