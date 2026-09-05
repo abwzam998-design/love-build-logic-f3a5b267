@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Users,
   Crown,
-
+  User,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/moath-soft-logo.png";
@@ -24,6 +24,13 @@ import { useRole, useSettings, useMyProfile, useIsSuperAdmin, useIsOwner } from 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const NAV = [
   { to: "/dashboard", label: "لوحة اليوم", icon: LayoutDashboard, manager: false },
@@ -210,6 +217,38 @@ export function AppShell({
             {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
           </div>
           {actions}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="shrink-0" aria-label="حساب المستخدم">
+                <User className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5 text-sm">
+                <p className="font-semibold truncate">{profile?.full_name ?? user?.email ?? "المستخدم"}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="w-full cursor-pointer">
+                  الإعدادات
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/my-account" className="w-full cursor-pointer">
+                  حسابي
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={signOut}
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
+                <LogOut className="size-4 ml-2" />
+                تسجيل الخروج
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
         <main className={cn("page-surface flex-1 p-4 md:p-6")}>{children}</main>
       </div>
