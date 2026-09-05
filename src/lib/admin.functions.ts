@@ -111,7 +111,7 @@ export const setAppUserActive = createServerFn({ method: "POST" })
     const update: Record<string, unknown> = { is_active: data.active };
     if (!data.active) update['is_approved'] = false;
     else update['is_approved'] = true;
-    const { error } = await supabaseAdmin.from("profiles").update(update).eq("id", data.userId);
+    const { error } = await supabaseAdmin.from("profiles").update(update as never).eq("id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

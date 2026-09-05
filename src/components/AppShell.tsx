@@ -14,12 +14,13 @@ import {
   LogOut,
   ShieldCheck,
   Users,
+  Crown,
 
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/moath-soft-logo.png";
 
-import { useRole, useSettings, useMyProfile, useIsSuperAdmin } from "@/hooks/useAppData";
+import { useRole, useSettings, useMyProfile, useIsSuperAdmin, useIsOwner } from "@/hooks/useAppData";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ const NAV = [
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { isManager } = useRole();
   const isSuperAdmin = useIsSuperAdmin();
+  const isOwner = useIsOwner();
   const linkClass =
     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/75 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-[-2px]";
   const activeProps = {
@@ -62,15 +64,22 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           {n.label}
         </Link>
       ))}
-      {isSuperAdmin && (
+      {(isManager || isSuperAdmin) && (
         <Link to="/admin" onClick={onNavigate} className={linkClass} activeProps={activeProps}>
           <ShieldCheck className="size-4 shrink-0" />
-          إدارة الاشتراكات
+          إدارة المستخدمين
+        </Link>
+      )}
+      {isOwner && (
+        <Link to="/owner" onClick={onNavigate} className={linkClass} activeProps={activeProps}>
+          <Crown className="size-4 shrink-0" />
+          لوحة مالك المنصة
         </Link>
       )}
     </nav>
   );
 }
+
 
 
 export function AppShell({
@@ -88,9 +97,20 @@ export function AppShell({
   const { isManager, user } = useRole();
   const { data: profile } = useMyProfile();
   const isSuperAdmin = useIsSuperAdmin();
+  const isOwner = useIsOwner();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const suspended = !!profile && profile.is_active === false && !isSuperAdmin;
+  const p = profile as
+    | { is_active?: boolean; subscription_status?: string; trial_ends_at?: string | null }
+    | null
+    | undefined;
+  const trialExpired =
+    !!p?.trial_ends_at && new Date(p.trial_ends_at).getTime() < Date.now();
+  const suspended =
+    !!p &&
+    !isSuperAdmin &&
+    !isOwner &&
+    (p.is_active === false || p.subscription_status === "suspended" || trialExpired);
 
 
   const signOut = async () => {
@@ -131,9 +151,13 @@ export function AppShell({
         <div className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-lg">
           <img src={logo} alt="شعار معاذ سوفت" className="mx-auto size-16 object-contain" />
           <p className="mt-2 text-sm font-bold text-primary">معاذ سوفت</p>
-          <h1 className="mt-3 text-lg font-bold text-destructive">تم إيقاف الحساب</h1>
+          <h1 className="mt-3 text-lg font-bold text-destructive">
+            {trialExpired ? "انتهت الفترة التجريبية" : "تم إيقاف الحساب"}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            تم إيقاف حسابك / اشتراكك. يرجى التواصل مع إدارة النظام.
+            {trialExpired
+              ? "انتهت فترتك التجريبية. يرجى التواصل مع إدارة النظام لتفعيل الاشتراك."
+              : "تم إيقاف حسابك / اشتراكك. يرجى التواصل مع إدارة النظام."}
           </p>
           <Button variant="outline" className="mt-5 w-full gap-2" onClick={signOut}>
             <LogOut className="size-4" /> تسجيل الخروج

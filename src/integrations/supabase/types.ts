@@ -414,7 +414,10 @@ export type Database = {
           id: string
           is_active: boolean
           is_approved: boolean
+          owner_note: string | null
           phone: string | null
+          subscription_status: string
+          trial_ends_at: string | null
         }
         Insert: {
           created_at?: string
@@ -424,7 +427,10 @@ export type Database = {
           id: string
           is_active?: boolean
           is_approved?: boolean
+          owner_note?: string | null
           phone?: string | null
+          subscription_status?: string
+          trial_ends_at?: string | null
         }
         Update: {
           created_at?: string
@@ -434,7 +440,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_approved?: boolean
+          owner_note?: string | null
           phone?: string | null
+          subscription_status?: string
+          trial_ends_at?: string | null
         }
         Relationships: [
           {
@@ -756,12 +765,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_owner_user: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      is_system_owner: { Args: never; Returns: boolean }
       my_entity_id: { Args: never; Returns: string }
     }
     Enums: {
-      app_role: "manager" | "seller" | "customer"
+      app_role: "manager" | "seller" | "customer" | "system_owner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -889,7 +900,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["manager", "seller", "customer"],
+      app_role: ["manager", "seller", "customer", "system_owner"],
     },
   },
 } as const
