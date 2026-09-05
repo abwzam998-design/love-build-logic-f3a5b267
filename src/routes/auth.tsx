@@ -80,6 +80,17 @@ function AuthPage() {
     else navigate({ to: "/my-account" });
   };
 
+  const signIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await doLogin(loginIdentifierToEmail(identifier), password);
+  };
+
+  const submitCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await doLogin(phoneToEmail(signupPhone), code);
+  };
+
+
   const signUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (phoneDigits(signupPhone).length < 7) {
