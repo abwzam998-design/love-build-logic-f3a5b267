@@ -76,7 +76,8 @@ function AuthPage() {
       .eq("user_id", data.user!.id);
     setLoading(false);
     const list = (roles ?? []).map((r) => r.role as string);
-    if (list.includes("manager") || list.includes("seller")) navigate({ to: "/dashboard" });
+    if (list.includes("system_owner")) navigate({ to: "/owner" });
+    else if (list.includes("manager") || list.includes("seller")) navigate({ to: "/dashboard" });
     else navigate({ to: "/my-account" });
   };
 

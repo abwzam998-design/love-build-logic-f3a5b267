@@ -18,6 +18,7 @@ import { Route as AuthenticatedExpensesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedFollowupRouteImport } from './routes/_authenticated/followup'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedLedgerRouteImport } from './routes/_authenticated/ledger'
+import { Route as AuthenticatedMyAccountRouteImport } from './routes/_authenticated/my-account'
 import { Route as AuthenticatedOwnerRouteImport } from './routes/_authenticated/owner'
 import { Route as AuthenticatedPersonalRouteImport } from './routes/_authenticated/personal'
 import { Route as AuthenticatedPurchasesRouteImport } from './routes/_authenticated/purchases'
@@ -70,6 +71,11 @@ const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
 const AuthenticatedLedgerRoute = AuthenticatedLedgerRouteImport.update({
   id: '/ledger',
   path: '/ledger',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMyAccountRoute = AuthenticatedMyAccountRouteImport.update({
+  id: '/my-account',
+  path: '/my-account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOwnerRoute = AuthenticatedOwnerRouteImport.update({
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/followup': typeof AuthenticatedFollowupRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/ledger': typeof AuthenticatedLedgerRoute
+  '/my-account': typeof AuthenticatedMyAccountRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/personal': typeof AuthenticatedPersonalRoute
   '/purchases': typeof AuthenticatedPurchasesRoute
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/followup': typeof AuthenticatedFollowupRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/ledger': typeof AuthenticatedLedgerRoute
+  '/my-account': typeof AuthenticatedMyAccountRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/personal': typeof AuthenticatedPersonalRoute
   '/purchases': typeof AuthenticatedPurchasesRoute
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/_authenticated/followup': typeof AuthenticatedFollowupRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/ledger': typeof AuthenticatedLedgerRoute
+  '/_authenticated/my-account': typeof AuthenticatedMyAccountRoute
   '/_authenticated/owner': typeof AuthenticatedOwnerRoute
   '/_authenticated/personal': typeof AuthenticatedPersonalRoute
   '/_authenticated/purchases': typeof AuthenticatedPurchasesRoute
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/followup'
     | '/inventory'
     | '/ledger'
+    | '/my-account'
     | '/owner'
     | '/personal'
     | '/purchases'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/followup'
     | '/inventory'
     | '/ledger'
+    | '/my-account'
     | '/owner'
     | '/personal'
     | '/purchases'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/_authenticated/followup'
     | '/_authenticated/inventory'
     | '/_authenticated/ledger'
+    | '/_authenticated/my-account'
     | '/_authenticated/owner'
     | '/_authenticated/personal'
     | '/_authenticated/purchases'
@@ -310,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLedgerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/my-account': {
+      id: '/_authenticated/my-account'
+      path: '/my-account'
+      fullPath: '/my-account'
+      preLoaderRoute: typeof AuthenticatedMyAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/owner': {
       id: '/_authenticated/owner'
       path: '/owner'
@@ -383,6 +402,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFollowupRoute: typeof AuthenticatedFollowupRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedLedgerRoute: typeof AuthenticatedLedgerRoute
+  AuthenticatedMyAccountRoute: typeof AuthenticatedMyAccountRoute
   AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
   AuthenticatedPersonalRoute: typeof AuthenticatedPersonalRoute
   AuthenticatedPurchasesRoute: typeof AuthenticatedPurchasesRoute
@@ -401,6 +421,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFollowupRoute: AuthenticatedFollowupRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedLedgerRoute: AuthenticatedLedgerRoute,
+  AuthenticatedMyAccountRoute: AuthenticatedMyAccountRoute,
   AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,
   AuthenticatedPersonalRoute: AuthenticatedPersonalRoute,
   AuthenticatedPurchasesRoute: AuthenticatedPurchasesRoute,
