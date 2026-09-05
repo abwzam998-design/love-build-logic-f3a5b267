@@ -47,11 +47,9 @@ function AuthPage() {
     });
   }, [navigate]);
 
-  const signIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doLogin = async (email: string, pass: string) => {
     setLoading(true);
-    const email = loginIdentifierToEmail(identifier);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
     if (error) {
       setLoading(false);
       toast.error("كلمة المرور أو رقم الجوال غير صحيح. تأكد من الرمز المُسلّم لك من الإدارة.");
