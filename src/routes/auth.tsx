@@ -178,16 +178,36 @@ function AuthPage() {
 
           <TabsContent value="signup">
             {sent ? (
-              <div className="space-y-3 rounded-2xl border bg-secondary/40 p-4 text-center">
-                <p className="text-sm font-bold text-primary">تم إرسال طلب تسجيلك بنجاح</p>
-                <p className="text-sm text-muted-foreground">
-                  سيتم مراجعة طلبك من قبل الإدارة وإرسال كلمة السر / رمز التفعيل إلى رقم هاتفك فور
-                  الموافقة.
-                </p>
-                <Button variant="outline" className="w-full" onClick={() => setSent(false)}>
+              <form onSubmit={submitCode} className="space-y-3 rounded-2xl border bg-secondary/40 p-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="code">أدخل رمز الدخول / كلمة المرور المرسلة إليك</Label>
+                  <Input
+                    id="code"
+                    type="password"
+                    required
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    تم إرسال طلبك بنجاح إلى المالك، يرجى إدخال كلمة المرور الموفرة لك عبر الواتساب
+                    أو SMS للدخول
+                  </p>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  دخول
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setCode("");
+                    setSent(false);
+                  }}
+                >
                   إرسال طلب آخر
                 </Button>
-              </div>
+              </form>
             ) : (
               <form onSubmit={signUp} className="space-y-3">
                 <div className="space-y-1.5">
