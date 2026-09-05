@@ -86,6 +86,15 @@ export function useIsSuperAdmin() {
   return (user?.email ?? "").toLowerCase() === SUPER_ADMIN_EMAIL;
 }
 
+/** مالك المنصة: البريد الشخصي أو دور system_owner */
+export function useIsOwner() {
+  const { roles, user } = useRole();
+  return (
+    (user?.email ?? "").toLowerCase() === SUPER_ADMIN_EMAIL || roles.includes("system_owner")
+  );
+}
+
+
 export type EntityKind = "customer" | "supplier" | "employee";
 
 export type Entity = {
