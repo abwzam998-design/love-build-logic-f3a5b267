@@ -175,3 +175,31 @@ export async function ensureEntity(kind: EntityKind, name: string, phone?: strin
   if (error) throw error;
   return created.id as string;
 }
+
+/** وحدات البيع الجاهزة لكل نوع معاملة */
+export const RETAIL_UNIT_PRESETS = ["كيلو", "نص كيلو", "ربع كيلو", "5 كيلو", "حبة"];
+export const WHOLESALE_UNIT_PRESETS = ["سلة", "كرتون", "طرد", "خيشة", "صندوق"];
+
+export type ProductUnit = {
+  id: string;
+  product_id: string;
+  sale_kind: string;
+  name: string;
+  factor: number;
+  cost_price: number;
+  sale_price: number;
+  is_active: boolean;
+};
+
+export function useProductUnits(productId?: string | null) {
+  return useQuery({
+    queryKey: ["product-units", productId ?? "all"],
+    queryFn: async () => {
+      let q = supabase.from("product_units").select("*").order("sale_kind").order("name");
+      if (productId) q = q.eq("product_id", productId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as unknown as ProductUnit[];
+    },
+  });
+}
