@@ -71,6 +71,51 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_postings: {
+        Row: {
+          cost: number
+          created_at: string
+          created_by: string | null
+          id: string
+          item_name: string
+          notes: string | null
+          post_date: string
+          profit: number
+          quantity: number
+          sale_kind: string | null
+          total: number
+          unit: string | null
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_name: string
+          notes?: string | null
+          post_date?: string
+          profit?: number
+          quantity?: number
+          sale_kind?: string | null
+          total?: number
+          unit?: string | null
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_name?: string
+          notes?: string | null
+          post_date?: string
+          profit?: number
+          quantity?: number
+          sale_kind?: string | null
+          total?: number
+          unit?: string | null
+        }
+        Relationships: []
+      }
       entities: {
         Row: {
           created_at: string
@@ -368,6 +413,53 @@ export type Database = {
             columns: ["purchase_id"]
             isOneToOne: false
             referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_units: {
+        Row: {
+          cost_price: number
+          created_at: string
+          factor: number
+          id: string
+          is_active: boolean
+          name: string
+          product_id: string
+          sale_kind: string
+          sale_price: number
+          updated_at: string
+        }
+        Insert: {
+          cost_price?: number
+          created_at?: string
+          factor?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          product_id: string
+          sale_kind?: string
+          sale_price?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_price?: number
+          created_at?: string
+          factor?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          product_id?: string
+          sale_kind?: string
+          sale_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_units_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
