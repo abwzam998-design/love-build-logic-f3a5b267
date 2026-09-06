@@ -474,6 +474,8 @@ function SalesPage() {
         </div>
       </div>
 
+      <DailySalesSummary />
+
       <h2 className="mt-6 mb-2 text-base font-bold">آخر الفواتير</h2>
       <div className="overflow-x-auto rounded-xl border bg-card">
         <table className="w-full text-sm">
