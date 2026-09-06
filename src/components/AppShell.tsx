@@ -218,6 +218,7 @@ export function AppShell({
             {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
           </div>
           {actions}
+          <UpdateButton />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="shrink-0" aria-label="حساب المستخدم">
