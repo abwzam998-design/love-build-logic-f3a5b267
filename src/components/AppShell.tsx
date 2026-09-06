@@ -18,6 +18,8 @@ import {
   User,
   RefreshCw,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/moath-soft-logo.png";
 
@@ -298,5 +300,46 @@ export function StatCard({
       <p className={cn("mt-1.5 text-2xl font-bold tabular-nums", tones.value)}>{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
+  );
+}
+
+function UpdateButton() {
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+
+  const checkUpdates = async () => {
+    setBusy(true);
+    try {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      await qc.invalidateQueries();
+      toast.success("جارٍ جلب آخر نسخة من النظام…");
+      const url = new URL(window.location.href);
+      url.searchParams.set("v", String(Date.now()));
+      window.location.replace(url.toString());
+    } catch {
+      setBusy(false);
+      toast.error("تعذر التحقق من التحديثات");
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      className="shrink-0"
+      onClick={checkUpdates}
+      disabled={busy}
+      title="التحقق من التحديثات"
+      aria-label="التحقق من التحديثات"
+    >
+      <RefreshCw className={cn("size-4", busy && "animate-spin")} />
+    </Button>
   );
 }
