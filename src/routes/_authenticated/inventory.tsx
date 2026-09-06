@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { money, dateOnly, num, SALE_UNITS } from "@/lib/format";
 import { useProducts } from "@/hooks/useAppData";
+import { ProductUnitsManager } from "@/components/ProductUnitsManager";
 
 export const Route = createFileRoute("/_authenticated/inventory")({
   ssr: false,
@@ -80,6 +81,9 @@ function InventoryPage() {
 
   return (
     <AppShell title="المخزون والهالك" subtitle="الأصناف والأسعار والتالف">
+      <div className="mb-4">
+        <ProductUnitsManager />
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl border bg-card p-4">
           <h2 className="mb-3 font-bold">إضافة صنف</h2>

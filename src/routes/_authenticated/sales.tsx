@@ -19,6 +19,8 @@ import {
   type Entity,
 } from "@/hooks/useAppData";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { useProductUnits } from "@/hooks/useAppData";
+import { DailySalesSummary } from "@/components/DailySalesSummary";
 import { invoiceText, printInvoicePdf, type InvoiceDoc } from "@/lib/invoiceDoc";
 import { Trash2, Plus, FileDown, Send, Pencil, X } from "lucide-react";
 
@@ -63,6 +65,7 @@ const lineTotal = (l: Line) =>
 function SalesPage() {
   const qc = useQueryClient();
   const { data: products } = useProducts();
+  const { data: allUnits } = useProductUnits();
   const { data: settings } = useSettings();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -343,11 +346,18 @@ function SalesPage() {
                   value={l.item_name}
                   onChange={(e) => {
                     const p = products?.find((x) => x.name === e.target.value);
+                    const pu = (allUnits ?? []).find(
+                      (u) => u.product_id === p?.id && u.sale_kind === l.sale_kind,
+                    );
                     setLine(i, {
                       item_name: e.target.value,
                       product_id: p?.id ?? null,
-                      unit_price: p ? Number(p.sale_price) : l.unit_price,
-                      unit: p?.unit ?? l.unit,
+                      unit_price: pu
+                        ? Number(pu.sale_price)
+                        : p
+                          ? Number(p.sale_price)
+                          : l.unit_price,
+                      unit: pu?.name ?? p?.unit ?? l.unit,
                     });
                   }}
                 />
@@ -362,11 +372,28 @@ function SalesPage() {
               <select
                 className="h-9 rounded-md border bg-background px-2 text-sm"
                 value={l.unit}
-                onChange={(e) => setLine(i, { unit: e.target.value })}
+                onChange={(e) => {
+                  const pu = (allUnits ?? []).find(
+                    (u) =>
+                      u.product_id === l.product_id &&
+                      u.sale_kind === l.sale_kind &&
+                      u.name === e.target.value,
+                  );
+                  setLine(i, {
+                    unit: e.target.value,
+                    unit_price: pu ? Number(pu.sale_price) : l.unit_price,
+                  });
+                }}
               >
-                {SALE_UNITS.map((u) => (
-                  <option key={u}>{u}</option>
-                ))}
+                {(() => {
+                  const own = (allUnits ?? []).filter(
+                    (u) => u.product_id === l.product_id && u.sale_kind === l.sale_kind,
+                  );
+                  const names = own.length ? own.map((u) => u.name) : SALE_UNITS;
+                  return (names.includes(l.unit) ? names : [l.unit, ...names]).map((u) => (
+                    <option key={u}>{u}</option>
+                  ));
+                })()}
               </select>
               <NumberInput
                 placeholder="السعر"
@@ -386,7 +413,18 @@ function SalesPage() {
                 <select
                   className="h-9 flex-1 rounded-md border bg-background px-2 text-sm"
                   value={l.sale_kind}
-                  onChange={(e) => setLine(i, { sale_kind: e.target.value })}
+                  onChange={(e) => {
+                    const kind = e.target.value;
+                    const own = (allUnits ?? []).filter(
+                      (u) => u.product_id === l.product_id && u.sale_kind === kind,
+                    );
+                    const first = own[0];
+                    setLine(i, {
+                      sale_kind: kind,
+                      unit: first ? first.name : l.unit,
+                      unit_price: first ? Number(first.sale_price) : l.unit_price,
+                    });
+                  }}
                 >
                   {SALE_KINDS.map((k) => (
                     <option key={k}>{k}</option>
